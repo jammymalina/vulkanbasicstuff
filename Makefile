@@ -2,7 +2,7 @@ TARGET   = vulkanapp
 
 CC       = gcc
 # compiling flags here
-CFLAGS = -std=c11 -flto -O3 -march=native
+CFLAGS = -std=c11 -flto -O3 -march=native -DDEBUG_LOG -DPROD_LOG -DERROR_LOG
 
 LINKER   = gcc -o
 # linking flags here
@@ -29,6 +29,7 @@ default: $(BINDIR)/$(TARGET)
 all: default
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
+	@mkdir -p $(BINDIR)
 	@$(LINKER) $@ $(LFLAGS) $(OBJECTS)
 	@echo "Linking complete!"
 
