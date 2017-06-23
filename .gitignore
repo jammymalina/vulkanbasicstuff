@@ -1,8 +1,8 @@
-*
-
-!Makefile
-!src
-!.gitignore
-!.vimrc 
-!.ycm_extra_conf.py
+*~
+*.swp
+*.swo
+bin 
+obj 
+core
+vgcore.*
 
