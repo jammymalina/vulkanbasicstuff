@@ -1,6 +1,15 @@
-*~
+# swap
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
 *.swp
-*.swo
+# session
+Session.vim
+# temporary
+.netrwhist
+*~
+# auto-generated tag files
+tags
+
 bin 
 obj 
 core
