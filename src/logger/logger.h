@@ -11,7 +11,7 @@
 		do {                                                \
 			time_t timer;                                   \
 			char buffer[32];                                \
-			struct tm* tm_info;                             \
+			struct tm *tm_info;                             \
 			time(&timer);                                   \
 			tm_info = localtime(&timer);                    \
 			strftime(buffer, 32, LOG_TIME_FORMAT, tm_info); \
@@ -28,7 +28,7 @@
 		do {                                                \
 			time_t timer;                                   \
 			char buffer[32];                                \
-			struct tm* tm_info;                             \
+			struct tm *tm_info;                             \
 			time(&timer);                                   \
 			tm_info = localtime(&timer);                    \
 			strftime(buffer, 32, LOG_TIME_FORMAT, tm_info); \
@@ -45,7 +45,7 @@
 		do {                                                \
 			time_t timer;                                   \
 			char buffer[32];                                \
-			struct tm* tm_info;                             \
+			struct tm *tm_info;                             \
 			time(&timer);                                   \
 			tm_info = localtime(&timer);                    \
 			strftime(buffer, 32, LOG_TIME_FORMAT, tm_info); \

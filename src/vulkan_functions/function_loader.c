@@ -34,13 +34,13 @@ bool load_all_vulkan_functions(LIB_TYPE *vulkan_lib, vk_functions *vk) {
 }
 
 bool load_exported_vulkan_function(LIB_TYPE vulkan_lib, vk_functions *vk) {
-	#define EXPORTED_VULKAN_FUNCTION(name)                                              \
-		vk->name = (PFN_vk##name) LOAD_FUNCTION(vulkan_lib, "vk" #name);                \
-		if (vk->name == NULL) {                                                         \
-			error_log("Could not load exported Vulkan function: vk" #name);       \
-			return false;                                                               \
-		} else {                                                                        \
-			debug_log("Successfully loaded exported Vulkan function: vk" #name);    \
+	#define EXPORTED_VULKAN_FUNCTION(name)                                       \
+		vk->name = (PFN_vk##name) LOAD_FUNCTION(vulkan_lib, "vk" #name);         \
+		if (vk->name == NULL) {                                                  \
+			error_log("Could not load exported Vulkan function: vk" #name);      \
+			return false;                                                        \
+		} else {                                                                 \
+			debug_log("Successfully loaded exported Vulkan function: vk" #name); \
 		}
 
 	#include "list.inl"
@@ -49,13 +49,13 @@ bool load_exported_vulkan_function(LIB_TYPE vulkan_lib, vk_functions *vk) {
 }
 
 bool load_global_functions(vk_functions *vk) {
-	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name)                                          \
-		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(NULL, "vk" #name);            \
-		if(vk->name == NULL) {                                                          \
-			error_log("Could not load global level function: vk" #name);           \
-			return false;                                                               \
-		} else {                                                                        \
-			debug_log("Successfully loaded global Vulkan function: vk" #name); \
+	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name)                                   \
+		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(NULL, "vk" #name);     \
+		if(vk->name == NULL) {                                                   \
+			error_log("Could not load global level function: vk" #name);         \
+			return false;                                                        \
+		} else {                                                                 \
+			debug_log("Successfully loaded global Vulkan function: vk" #name);   \
 		}
 
 	#include "list.inl"
