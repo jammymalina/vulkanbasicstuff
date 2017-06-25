@@ -33,162 +33,71 @@ static int parse_version_index(const char *version) {
 	return -1;
 }
 
-static bool parse_version(yaml_parser_t *parser, yaml_event_t *event, long values[3]) {
-	bool prev_indices[] = { false, false, false };	
-	if (event->type != YAML_MAPPING_START_EVENT) {
-		return false;
-	}
-	yaml_event_delete(event);
+static bool parse_node(yaml_document_t *document, yaml_node_t *node) {
+	static int x = 0; 
+	x++; 
+	int node_n = x;	
 
-	for (int i = 0; i < 3; i++) {
-		if (!yaml_parser_parse(parser, event)) {
-			return false;
-		}	
-		if (event->type == YAML_SCALAR_EVENT) {
-			int index = parse_version_index((char*) event->data.scalar.value); 
-			if (index == -1 || prev_indices[index]) {
-				return false;
-			}	
-			yaml_event_delete(event);
-			if (!yaml_parser_parse(parser, event)) {
-				return false;
-			}
-			long v; 
-			if (!parse_long((char*) event->data.scalar.value, &v)) {
-				return false;
-			}		
-			values[index] = v; 
-			prev_indices[index] = true;
-			yaml_event_delete(event);
-		} else if (event->type == YAML_MAPPING_END_EVENT) {
+	bool success = true;
+
+	yaml_node_t *next_node;
+
+	debug_log("START NODE");		
+	switch (node->type) {
+		case YAML_NO_NODE: 
+			debug_log("Empty node: %d.", node_n); 
+			break; 
+		case YAML_SCALAR_NODE: 
+			debug_log("Scalar node: %d, %s.", node_n, node->data.scalar.value); 
 			break;
-		} else {
-			return false;
-		}
-	}	
-	
-	if (event->type != YAML_MAPPING_END_EVENT) {
-		return false; 
-	}
-	yaml_event_delete(event);
-
-	return yaml_parser_parse(parser, event);
-}
-
-static bool parse_empty(yaml_parser_t *parser, yaml_event_t *event) {
-	yaml_event_delete(event);
-	return !yaml_parser_parse(parser, event);
-}
-
-static bool parse_empty_mapping(yaml_parser_t *parser, yaml_event_t *event) {
-	if (event->type != YAML_MAPPING_START_EVENT) {
-		return false; 
-	}
-	int current_level = 0; 
-	while (event->type != YAML_MAPPING_END_EVENT || current_level > 0) {
-		if (!parse_empty(parser, event)) {
-			return false;
-		}
-		if (event->type == YAML_MAPPING_START_EVENT) {
-			current_level++;
-		} else if (event->type == YAML_MAPPING_END_EVENT && current_level > 0) {
-			current_level--;
-		} 
-	}
-	return parse_empty(parser, event);
-}
-
-static bool parse_empty_sequence(yaml_parser_t *parser, yaml_event_t *event) {
-	if (event->type != YAML_SEQUENCE_START_EVENT) {
-		return false; 
-	}
-	int current_level = 0;
-	while (event->type != YAML_SEQUENCE_END_EVENT || current_level > 0) {
-		if (!parse_empty(parser, event)) {
-			return false; 
-		}
-		if (event->type == YAML_SEQUENCE_START_EVENT) {
-			current_level++;
-		} else if (event->type == YAML_SEQUENCE_END_EVENT && current_level > 0) {
-			current_level--;
-		}
-	} 
-	return parse_empty(parser, event);
-}
-
-static bool parse_application(yaml_parser_t *parser, yaml_event_t *event, vk_store *store) {
-	if (event->type != YAML_MAPPING_START_EVENT) {
-		return false;
-	}
-	yaml_event_delete(event);
-	if (!yaml_parser_parse(parser, event)) {
-		return false;
-	}
-
-	bool finished = false;
-	bool expect_value = false;
-	char key[512];
-	while (!finished) {
-		switch(event.type) { 
-			case YAML_NO_EVENT: 
-			case YAML_STREAM_START_EVENT: 
-			case YAML_STREAM_END_EVENT:
-			case YAML_DOCUMENT_START_EVENT: 
-			case YAML_DOCUMENT_END_EVENT: 
-			case YAML_SEQUENCE_END_EVENT:
-			case YAML_ALIAS_EVENT:
-				return false;
-
-			case YAML_SEQUENCE_START_EVENT:
-				bool should_skip = true;
-				if (expect_value) {
-					if (strcmp())
-				} 
-				if (should_skip && !parse_empty_sequence(parser, event)) {
-					return false;
-				} 
-				expect_value = false;
-				break;
-			case YAML_MAPPING_START_EVENT: 
-				if (!parse_empty_mapping(parser, event)) {
-					return false; 
+		case YAML_SEQUENCE_NODE:
+			debug_log("Sequence node: %d.", node_n);
+			yaml_node_item_t *iter;	
+			for (iter = node->data.sequence.items.start; iter < node->data.sequence.items.top; iter++) {
+				next_node = yaml_document_get_node(document, *iter);
+				if (next_node) {
+					parse_node(document, next_node);
 				}
-				expect_value = false;
-				break;
-			case YAML_SCALAR_EVENT: 
-				bool should_skip = true;
-				if (expect_value) {
-					if (!parse_empty(parser, event)) {
-						return false; 
-					}
-					expect_value = false;  
+			}
+			break; 	
+		case YAML_MAPPING_NODE:	
+			debug_log("Mapping node: %d, %d.", node_n);
+			yaml_node_pair_t *piter;	
+			for (piter = node->data.mapping.pairs.start; piter < node->data.mapping.pairs.top; piter++) {
+				next_node = yaml_document_get_node(document, piter->key); 
+				if (next_node) {
+					debug_log("Key: "); 
+					parse_node(document, next_node);
 				} else {
-					if (event->data.scalar.length >= 512) {
-						error_log("Config file reading error - allocated space for key was not enough.");
-						strcpy(key, ""); 
-					}	
-					expect_value = true;
-				} 
+					debug_log("Couldn't find key node.");
+				}
 
-				break;
-			case YAML_MAPPING_END_EVENT:
-				finished = true; 
-				break;
-		}
+				next_node = yaml_document_get_node(document, piter->value); 
+				if (next_node) {
+					debug_log("Value: "); 
+					parse_node(document, next_node);
+				} else {
+					debug_log("Couldn't find value node.");
+				}
+			}
+			break; 
+		default: 
+			debug_log("Unknown node for whatever reason."); 
+			break;
+		
+	}	
 
-	}
+	debug_log("END NODE");
 
-	if (event->type != YAML_MAPPING_END_EVENT) {
-		return false; 
-	}
-	yaml_event_delete(event);
-	if (!yaml_parser_parse(parser, event)) {
-		return false;
-	}
-
-	return true;
+	return success; 
 }
 
+static bool parse_document(yaml_document_t *document) {
+	debug_log("NEW DOCUMENT"); 
+	bool success = parse_node(document, yaml_document_get_root_node(document));
+	debug_log("END DOCUMENT");
+   return success; 	
+}
 
 bool load_extensions(const vk_functions *vk, vk_store *store) {
 	store->extensions_count = 0; 
@@ -233,28 +142,33 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 
 	yaml_parser_set_input_file(&parser, fh);
 	
-	yaml_event_t event;
-	bool done = false;
 	bool success = true;
+	yaml_document_t document; 			
+
+	
+	bool done = false; 
 	while (!done) {
-		if (!yaml_parser_parse(&parser, &event)) {
-			break;
+		if (!yaml_parser_load(&parser, &document)) {
+			success = false;
+			goto parsingcleanup;
 		}
+		done = !yaml_document_get_root_node(&document);
 		
-		if (strcmp((char*) event.data.scalar.value, "application") == 0) {
-			success = parse_application(&parser, &event, store); 
-			if (!success) {
-				error_log("Invalid application config.");
-			}
+		if (!done) {
+			parse_document(&document);
 		}
 
-		done = (event.type == YAML_STREAM_END_EVENT) || !success;
-		yaml_event_delete(&event);
-	}
+		yaml_document_delete(&document);
+	}	
+	
+	yaml_document_delete(&document);
+
+	parsingcleanup:
 	if (success)
 		debug_log("Done parsing the application config.");
 	else 
 		error_log("Error while reading the application config.");
+
 	yaml_parser_delete(&parser);
 	fclose(fh);
 
