@@ -10,7 +10,8 @@ int main() {
 	vk_store store;
 
 	bool success = load_all_vulkan_functions(&vulkan_lib, &vk) 
-		&& load_extensions(&vk, &store);
+		&& load_extensions(&vk, &store)
+		&& create_instance(&vk, &store, "./config/app.config");
 	
 	debug_log("Supported extensions: "); 
 	for (size_t i = 0; i < store.extensions_count; i++) {

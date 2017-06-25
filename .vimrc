@@ -12,7 +12,12 @@ augroup project
     autocmd BufRead,BufNewFile *.h,*.c set filetype=c.doxygen
 augroup END
 
-let &path.="src/include,"
+let g:syntastic_c_compiler="gcc"
+let g:syntastic_check_on_open=1
+let g:syntastic_check_on_wq=0
+let g:syntastic_error_symbol="✗"
+let g:syntastic_c_compiler_options="-std=c11"
+let g:syntastic_c_include_dirs=[]
 
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif

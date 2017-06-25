@@ -2,11 +2,11 @@ TARGET   = vulkanapp
 
 CC       = gcc
 # compiling flags here
-CFLAGS = -std=c11 -flto -O3 -march=native -DDEBUG_LOG -DPROD_LOG -DERROR_LOG
+CFLAGS = -std=c11 -flto -O3 -march=native
 
 LINKER   = gcc -o
 # linking flags here
-LFLAGS   = -flto -O3 -march=native -lm -ldl
+LFLAGS   = -flto -O3 -march=native -lm -ldl -lyaml
 
 # change these to set the proper directories where each files shoould be
 SRCDIR   = src
@@ -21,21 +21,29 @@ INCLUDES := $(wildcard $(SRCDIR)/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_functions/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
 
+INCLUDE_DIRS := 
+LIB_DIRS     := 
+
 OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 rm       = rm -rf
+
+# DEFINES := -DYAML_VERSION_MAJOR=0 -DYAML_VERSION_MINOR=1 -DYAML_VERSION_PATCH=7 -DYAML_VERSION_STRING=\"1.7\"
+DEFINES := -DDEBUG_LOG -DPROD_LOG -DERROR_LOG
 
 default: $(BINDIR)/$(TARGET)
 all: default
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(BINDIR)
-	@$(LINKER) $@ $(LFLAGS) $(OBJECTS)
+	@$(rm) $(BINDIR)/config
+	@cp -r config/ $(BINDIR)/
+	@$(LINKER) $@ $(LIB_DIRS) $(LFLAGS) $(OBJECTS)
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions
-	@$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
 .PHONEY: clean
