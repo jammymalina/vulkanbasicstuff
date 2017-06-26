@@ -5,9 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../vulkan_functions/functions.h"
-
-#define MAX_VULKAN_EXTENSIONS 256
-#define STORE_FIELD_SIZE 512
+#include "vulkan_limits.h"
 
 typedef struct {
 	char title[STORE_FIELD_SIZE]; 
@@ -37,7 +35,12 @@ typedef struct {
 } vk_store; 
 
 void init_default_application_config(application_config *config);
-void copy_application_config(application_config *dest, application_config *src);
+void copy_application_config(application_config *dest, const application_config *src);
+void application_config_log(const application_config *app_info);
+
+void init_default_vulkan_config(vulkan_config *vk_info); 
+void copy_vulkan_config(vulkan_config *dest, const vulkan_config *src); 
+void vulkan_config_log(const vulkan_config *vk_info);
 
 bool load_extensions(const vk_functions *vk, vk_store *store);
 bool create_instance(const vk_functions *vk, vk_store *store, const char *config_filename); 
