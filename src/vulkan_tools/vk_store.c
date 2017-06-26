@@ -31,6 +31,10 @@ void application_config_log(const application_config *app_info) {
 }
 
 void init_default_vulkan_config(vulkan_config *vk_info) {
+	vk_info->desired_version[0] = 1;
+	vk_info->desired_version[1] = 0;
+	vk_info->desired_version[2] = 0;
+	vk_info->desired_extensions_count = 0; 
 }
 
 void copy_vulkan_config(vulkan_config *dest, const vulkan_config *src) {
