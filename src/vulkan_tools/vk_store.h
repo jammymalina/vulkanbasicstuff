@@ -7,6 +7,7 @@
 #include "../vulkan_functions/functions.h"
 
 #define MAX_VULKAN_EXTENSIONS 256
+#define STORE_FIELD_SIZE 512
 
 typedef struct {
 	struct {
@@ -20,11 +21,11 @@ typedef struct {
 	VkInstance instance;	
 
 	struct {
-		char *title; 
-		char *name; 
+		char title[STORE_FIELD_SIZE]; 
+		char name[STORE_FIELD_SIZE]; 
 		long version[3];
 		struct {
-			char *name; 
+			char name[STORE_FIELD_SIZE]; 
 			long version[3];
 		} engine;
 	} application_info;

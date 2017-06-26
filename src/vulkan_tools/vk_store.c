@@ -8,6 +8,11 @@
 #include <yaml.h>
 #include "../logger/logger.h"
 
+#define NO_APP_CONFIG 0 
+#define INVALID_APP_CONFIG 1 
+#define VALID_APP_CONFIG  2
+#define PARSER_ERROR  3
+
 static bool parse_long(const char *str, long *val) {
 	char *temp;
 	bool success = true;
@@ -33,70 +38,76 @@ static int parse_version_index(const char *version) {
 	return -1;
 }
 
-static bool parse_node(yaml_document_t *document, yaml_node_t *node) {
-	static int x = 0; 
-	x++; 
-	int node_n = x;	
+static bool node_key_equals(yaml_node_t *node, const char *str) {
+	if (node->type != YAML_SCALAR_NODE) 
+		return false; 
+	return strcmp((char*) node->data.scalar.value, str) == 0;
+}
 
-	bool success = true;
+static size_t node_scalar_value_get(yaml_node_t *node, char *dest, size_t dest_size) {
+	if (!node)
+		return 0;
+	if (node->type != YAML_SCALAR_NODE) 
+		return 0;
+    if (node->data.scalar.length >= dest_size)
+		return 0;
+	strncpy(dest, (char*) node->data.scalar.value, node->data.scalar.length);
+	dest[node->data.scalar.length + 1] = '\0';	
+	return node->data.scalar.length + 1;	
+}	
 
+static int parse_application_node(yaml_document_t *document, yaml_node_t *node) {
+	if (node->type != YAML_MAPPING_NODE)
+		return INVALID_APP_CONFIG;
+	yaml_node_pair_t *iter;
 	yaml_node_t *next_node;
-
-	debug_log("START NODE");		
-	switch (node->type) {
-		case YAML_NO_NODE: 
-			debug_log("Empty node: %d.", node_n); 
-			break; 
-		case YAML_SCALAR_NODE: 
-			debug_log("Scalar node: %d, %s.", node_n, node->data.scalar.value); 
-			break;
-		case YAML_SEQUENCE_NODE:
-			debug_log("Sequence node: %d.", node_n);
-			yaml_node_item_t *iter;	
-			for (iter = node->data.sequence.items.start; iter < node->data.sequence.items.top; iter++) {
-				next_node = yaml_document_get_node(document, *iter);
-				if (next_node) {
-					parse_node(document, next_node);
+	char value[STORE_FIELD_SIZE];
+	for (iter = node->data.mapping.pairs.start; iter < node->data.mapping.pairs.top; iter++) {
+		next_node = yaml_document_get_node(document, iter->key);
+		if (next_node) {
+			if (node_key_equals(next_node, "name")) {
+				next_node = yaml_document_get_node(document, iter->value);
+				size_t size = node_scalar_value_get(next_node, value, STORE_FIELD_SIZE);
+				if (size == 0) {
+					error_log("Error while parsing the name property, the prop may be invalid.");
 				}
+			} else if (node_key_equals(next_node, "title")) {
+			} else if (node_key_equals(next_node, "version")) {
+			} else if (node_key_equals(next_node, "engine")) {
+			} else if (node_key_equals(next_node, "vulkan")) {
 			}
-			break; 	
-		case YAML_MAPPING_NODE:	
-			debug_log("Mapping node: %d, %d.", node_n);
-			yaml_node_pair_t *piter;	
-			for (piter = node->data.mapping.pairs.start; piter < node->data.mapping.pairs.top; piter++) {
-				next_node = yaml_document_get_node(document, piter->key); 
+		}
+	}
+	return VALID_APP_CONFIG;
+}
+
+static int parse_document(yaml_document_t *document) {
+	yaml_node_t *node = yaml_document_get_root_node(document);
+	if (!node) {
+		return PARSER_ERROR; 
+	}	
+	yaml_node_t *next_node;
+	yaml_node_pair_t *iter;	
+	switch (node->type) {		
+		case YAML_MAPPING_NODE:
+			for (iter = node->data.mapping.pairs.start; iter < node->data.mapping.pairs.top; iter++) {
+				next_node = yaml_document_get_node(document, iter->key); 
 				if (next_node) {
-					debug_log("Key: "); 
-					parse_node(document, next_node);
+					if (node_key_equals(next_node, "application")) {
+						next_node = yaml_document_get_node(document, iter->value);
+						if (!next_node) return PARSER_ERROR;
+						return parse_application_node(document, next_node);	
+					} 
 				} else {
 					debug_log("Couldn't find key node.");
-				}
-
-				next_node = yaml_document_get_node(document, piter->value); 
-				if (next_node) {
-					debug_log("Value: "); 
-					parse_node(document, next_node);
-				} else {
-					debug_log("Couldn't find value node.");
 				}
 			}
 			break; 
 		default: 
-			debug_log("Unknown node for whatever reason."); 
 			break;
 		
 	}	
-
-	debug_log("END NODE");
-
-	return success; 
-}
-
-static bool parse_document(yaml_document_t *document) {
-	debug_log("NEW DOCUMENT"); 
-	bool success = parse_node(document, yaml_document_get_root_node(document));
-	debug_log("END DOCUMENT");
-   return success; 	
+	return NO_APP_CONFIG;
 }
 
 bool load_extensions(const vk_functions *vk, vk_store *store) {
@@ -142,32 +153,42 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 
 	yaml_parser_set_input_file(&parser, fh);
 	
-	bool success = true;
-	yaml_document_t document; 			
+	bool success = true;			
+	bool done = false;
 
-	
-	bool done = false; 
+	yaml_document_t document; 
 	while (!done) {
 		if (!yaml_parser_load(&parser, &document)) {
 			success = false;
-			goto parsingcleanup;
+			error_log("Parsing error."); 
+			break;
 		}
 		done = !yaml_document_get_root_node(&document);
 		
 		if (!done) {
-			parse_document(&document);
+			int status = parse_document(&document);
+			switch (status) {
+				case PARSER_ERROR: 
+					error_log("Parsing error.");
+					done = true;
+					success = false; 
+					break;
+				case INVALID_APP_CONFIG:
+					error_log("Invalid configuration, check the app config file.");
+					done = true; 
+					success = false; 	
+					break;
+				case VALID_APP_CONFIG: 
+					done = true; 
+					debug_log("Successfully parsed the app config file.");
+					break;
+			}
 		}
 
 		yaml_document_delete(&document);
 	}	
 	
-	yaml_document_delete(&document);
-
-	parsingcleanup:
-	if (success)
-		debug_log("Done parsing the application config.");
-	else 
-		error_log("Error while reading the application config.");
+	debug_log("Done parsing the application config.");
 
 	yaml_parser_delete(&parser);
 	fclose(fh);
