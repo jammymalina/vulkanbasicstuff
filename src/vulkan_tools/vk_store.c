@@ -92,7 +92,7 @@ static int parse_version(yaml_document_t *document, yaml_node_t *node, long vers
 }
 
 static int parse_string_sequence(yaml_document_t *document, yaml_node_t *node, 
-	char **strings, size_t num_of_strings, size_t string_size)
+	char **strings, size_t max_num_of_strings, size_t max_string_size, size_t *strings_count)
 {
 	if (node->type != YAML_SEQUENCE_NODE)
 		return INVALID_APP_CONFIG;
@@ -102,15 +102,16 @@ static int parse_string_sequence(yaml_document_t *document, yaml_node_t *node,
 		next_node = yaml_document_get_node(document, *iter);
 		if (!next_node)
 			return PARSER_ERROR;
-		if (i > num_of_strings)
+		if (i > max_num_of_strings)
 			return INVALID_APP_CONFIG; 
-		size_t size = node_scalar_value_get(next_node, strings[i], string_size);
+		size_t size = node_scalar_value_get(next_node, strings[i], max_string_size);
 		if (size == 0) {
 			error_log("Error while parsing the name property, the prop is invalid.");
 			return INVALID_APP_CONFIG;
 		}
 		i++;
 	}
+	*desired_extensions_count = i;
 	return VALID_APP_CONFIG;
 }
 
@@ -125,14 +126,14 @@ static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulka
 			if (node_key_equals(next_node, "version")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the vulkan version node");
+					error_log("Parser error, location: the vulkan version node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_version(document, next_node, version_value);
 				if (status != VALID_APP_CONFIG) {
 					if (status == INVALID_APP_CONFIG)
 						error_log("Error while parsing the vulkan version property, 
-							the prop is invalid");
+							the prop is invalid.");
 					else 
 						error_log("Parser error, location: the vulkan version node.");
 					return status;
@@ -142,18 +143,31 @@ static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulka
 				vk_info->desired_version[1] = version_value[1] != -1 ? 
 					version_value[1] : vk_info->desired_version[1]; 
 				vk_info->desired_version[0] = version_value[0] != -1 ? 
-					version_value[2] : vk_info->desired_version[0]; 
+					version_value[2] : vk_info->desired_version[2]; 
 			} else if (node_key_equals(next_node, "extensions")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the vulkan extensions node");
+					error_log("Parser error, location: the vulkan extensions node.");
 					return PARSER_ERROR;
 				}
+				size_t extensions_values_count;
 				int status = parse_string_sequence(docuemtn, next_node, extensions_values, 
-					MAX_VULKAN_EXTENSIONS, VK_MAX_EXTENSION_NAME_SIZE);
+					MAX_VULKAN_EXTENSIONS, VK_MAX_EXTENSION_NAME_SIZE, &extensions_values_count);
+				if (status != VALID_APP_CONFIG) {
+					if (status == INVALID_APP_CONFIG)
+						error_log("Error while parsing the vulkan version property, 
+							the prop is invalid.");
+					else 
+						error_log("Parser error, location: the vulkan version node.");
+					return status;
+				}
+				vk_info->desired_extensions_count = extensions_values_count; 
+				for (size_t i = 0; i < vk_info->desired_extensions_count; i++) {
+					strcpy(vk_info->desired_extensions[i], extensions_values[i]);
+				}
 			}
 		} else {
-			error_log("Parser error, location: the engine node");
+			error_log("Parser error, location: the engine node.");
 			return PARSER_ERROR;
 		}
 	}
@@ -171,7 +185,7 @@ static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, appli
 			if (node_key_equals(next_node, "name")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the engine name node");
+					error_log("Parser error, location: the engine name node.");
 					return PARSER_ERROR;
 				}
 				size_t size = node_scalar_value_get(next_node, value, STORE_FIELD_SIZE);
@@ -183,14 +197,14 @@ static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, appli
 			} else if (node_key_equals(next_node, "version")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the engine version node");
+					error_log("Parser error, location: the engine version node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_version(document, next_node, version_value);
 				if (status != VALID_APP_CONFIG) {
 					if (status == INVALID_APP_CONFIG)
 						error_log("Error while parsing the engine version property, 
-							the prop is invalid");
+							the prop is invalid.");
 					else 
 						error_log("Parser error, location: the engine version node.");
 					return status;
@@ -203,7 +217,7 @@ static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, appli
 					version_value[2] : app_info->engine.version[2]; 
 			}
 		} else {
-			error_log("Parser error, location: the engine node");
+			error_log("Parser error, location: the engine node.");
 			return PARSER_ERROR;
 		}
 	}
@@ -225,7 +239,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			if (node_key_equals(next_node, "name")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application name node");
+					error_log("Parser error, location: the application name node.");
 					return PARSER_ERROR;
 				}
 				size_t size = node_scalar_value_get(next_node, value, STORE_FIELD_SIZE);
@@ -237,7 +251,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			} else if (node_key_equals(next_node, "title")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application title node");
+					error_log("Parser error, location: the application title node.");
 					return PARSER_ERROR;
 				}
 				size_t size = node_scalar_value_get(next_node, value, STORE_FIELD_SIZE);
@@ -249,13 +263,13 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			} else if (node_key_equals(next_node, "version")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application version node");
+					error_log("Parser error, location: the application version node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_version(document, next_node, version_value);
 				if (status != VALID_APP_CONFIG) {
 					error_log("Error while parsing the application version property, 
-						the prop may be invalid");
+						the prop may be invalid.");
 					return status;
 				}
 				app_info->version[0] = version_value[0] != -1 ? version_value[0] : app_info->version[0]; 
@@ -264,7 +278,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			} else if (node_key_equals(next_node, "engine")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application engine node");
+					error_log("Parser error, location: the application engine node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_engine_node(document, next_node, app_info);
@@ -275,7 +289,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			} else if (node_key_equals(next_node, "vulkan")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application vulkan node");
+					error_log("Parser error, location: the application vulkan node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_vulkan_node(document, next_node, vk_info);
@@ -332,7 +346,7 @@ bool load_extensions(const vk_functions *vk, vk_store *store) {
 		debug_log("Found %d extensions.", store->extensions_count);
 	}
 	if (store->extensions_count > MAX_VULKAN_EXTENSIONS) {
-		error_log("Not enough space for extensions");
+		error_log("Not enough space for extensions.");
 		return false;
 	}
 	
