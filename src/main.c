@@ -14,8 +14,9 @@ int main() {
 		&& create_instance(&vk, &store, "./config/app.config");
 	
 	debug_log("Supported extensions: "); 
-	for (size_t i = 0; i < store.extensions_count; i++) {
-		debug_log("  %s, version: %d", store.extensions[i].extensionName, store.extensions[i].specVersion);
+	for (size_t i = 0; i < store.available_extensions_count; i++) {
+		debug_log("  %s, version: %d", store.available_extensions[i].extensionName, 
+				store.available_extensions[i].specVersion);
 	}
 
 	if (!success) {

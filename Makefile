@@ -16,9 +16,11 @@ BINDIR   = bin
 SOURCES  := $(wildcard $(SRCDIR)/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/vulkan_functions/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/vulkan_tools/*.c)
+SOURCES  += $(wildcard $(SRCDIR)/utils/*.c)
 
 INCLUDES := $(wildcard $(SRCDIR)/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_functions/*.h)
+INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
 
 INCLUDE_DIRS := 
@@ -42,7 +44,7 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions
+	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils
 	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 

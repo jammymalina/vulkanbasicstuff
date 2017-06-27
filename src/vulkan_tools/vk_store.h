@@ -30,7 +30,7 @@ typedef struct {
 	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
 
 	uint32_t loaded_extensions_count;
-	char loaded_extensions[VK_MAX_EXTENSION_NAME_SIZE * MAX_VULKAN_EXTENSIONS];
+	char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
 
 	VkInstance instance;	
 

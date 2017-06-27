@@ -3,6 +3,7 @@
 
 #include <vulkan/vulkan.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "vulkan_limits.h" 
 
 bool is_vulkan_extension_supported(const VkExtensionProperties available_extensions[],
