@@ -34,7 +34,7 @@ typedef struct {
 	application_config application_info;
 } vk_store; 
 
-void init_default_application_config(application_config *config);
+void init_default_application_config(application_config *app_info);
 void copy_application_config(application_config *dest, const application_config *src);
 void application_config_log(const application_config *app_info);
 

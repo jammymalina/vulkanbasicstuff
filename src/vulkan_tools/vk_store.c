@@ -7,10 +7,26 @@
 #include "../logger/logger.h"
 #include "parser.h"
 
-void init_default_application_config(application_config *config) {
+void init_default_application_config(application_config *app_info) {
+	strcpy(app_info->title, "Default title"); 
+	strcpy(app_info->name, "Default name");
+	app_info->version[0] = 1; 
+	app_info->version[1] = app_info->version[2] = 0; 
+	strcpy(app_info->engine.name, "Default engine name");
+	app_info->engine.version[0] = 1;
+    app_info->engine.version[1] = app_info->engine.version[2] = 0; 
 }
 
 void copy_application_config(application_config *dest, const application_config *src) {
+	strcpy(dest->title,src->title); 
+	strcpy(dest->name, src->name);
+	dest->version[0] = src->version[0]; 
+	dest->version[1] = src->version[1]; 
+	dest->version[2] = src->version[2]; 
+	strcpy(dest->engine.name, src->engine.name);
+	dest->engine.version[0] = src->engine.version[0];
+    dest->engine.version[1] = src->engine.version[1];
+	dest->engine.version[2] = src->engine.version[2]; 
 }
 
 void application_config_log(const application_config *app_info) { 
@@ -38,6 +54,7 @@ void init_default_vulkan_config(vulkan_config *vk_info) {
 }
 
 void copy_vulkan_config(vulkan_config *dest, const vulkan_config *src) {
+	dest->desired_version[0] = src->desired_version[0];
 }
 
 void vulkan_config_log(const vulkan_config *vk_info) {
