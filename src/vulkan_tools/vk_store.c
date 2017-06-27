@@ -242,7 +242,7 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 	} else {
 		debug_log("Successfully created the instance.");
 	}
-	for (size_t i = 0; i < store->loaded_extensions; i++)
+	for (size_t i = 0; i < store->loaded_extensions_count; i++)
 		free(ext[i]); 
 	free(ext);
 
