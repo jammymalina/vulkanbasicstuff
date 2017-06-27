@@ -26,8 +26,11 @@ typedef struct {
 typedef struct {
 	uint32_t apiVersion;
 
-	uint32_t extensions_count; 
-	VkExtensionProperties extensions[MAX_VULKAN_EXTENSIONS];
+	uint32_t available_extensions_count; 
+	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
+
+	uint32_t loaded_extensions_count;
+	char loaded_extensions[VK_MAX_EXTENSION_NAME_SIZE * MAX_VULKAN_EXTENSIONS];
 
 	VkInstance instance;	
 
