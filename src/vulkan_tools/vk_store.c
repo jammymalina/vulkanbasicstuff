@@ -91,7 +91,7 @@ bool load_extensions(const vk_functions *vk, vk_store *store) {
 
 	result = vk->EnumerateInstanceExtensionProperties(NULL, &store->available_extensions_count, NULL);
 	if (result != VK_SUCCESS || store->available_extensions_count == 0) {
-		error_log("Could not get the Vulkan extensions.");	
+		error_log("Could not get the number of Vulkan extensions.");	
 		return false;
 	} else {
 		debug_log("Found %d extensions.", store->available_extensions_count);
@@ -107,7 +107,11 @@ bool load_extensions(const vk_functions *vk, vk_store *store) {
 		error_log("Could not enumerate Vulkan extensions.");
 		return false;
 	} else {
-		debug_log("Successfully enumerated %d extensions.", store->available_extensions_count);
+		debug_log("Successfully enumerated %d extensions:", store->available_extensions_count);
+		for (size_t i = 0; i < store->available_extensions_count; i++) {
+			debug_log("  %s, version: %d", store->available_extensions[i].extensionName, 
+					store->available_extensions[i].specVersion);
+		}
 	}
 
 	return true;
@@ -204,7 +208,7 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 				error_log("Problem with memory allocation.");
 				return false;
 			}
-			nstrcpy(ext[i], store->loaded_extensions[i], ext_size);
+			nstrncpy(ext[i], store->loaded_extensions[i], ext_size);
 		}
 	} 
 
@@ -247,6 +251,32 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 		for (size_t i = 0; i < store->loaded_extensions_count; i++)
 			free(ext[i]); 
 		free(ext);
+	}
+
+	return true;
+}
+
+bool load_devices(const vk_functions *vk, vk_store *store) {
+	store->available_devices_count = 0; 
+
+	VkResult result = vk->EnumeratePhysicalDevices(store->instance, &store->available_devices_count, NULL); 
+	if (result != VK_SUCCESS || store->available_devices_count == 0) {
+		error_log("Could not get the number of Vulkan devices.");
+	} else {
+		debug_log("Found %d device(s).", store->available_devices_count);
+	}
+	if (store->available_devices_count > MAX_VULKAN_DEVICES) {
+		error_log("Not enough space for devices.");
+		return false;
+	}
+	
+	result = vk->EnumeratePhysicalDevices(store->instance, &store->available_devices_count, 
+		&store->available_devices[0]);
+	if (result != VK_SUCCESS || store->available_devices_count == 0) {
+		error_log("Could not enumerate Vulkan devices.");
+		return false;
+	} else {
+		debug_log("Successfully enumerated %d device(s).", store->available_devices_count);
 	}
 
 	return true;

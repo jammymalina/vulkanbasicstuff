@@ -50,13 +50,13 @@ bool load_exported_vulkan_function(LIB_TYPE vulkan_lib, vk_functions *vk) {
 }
 
 bool load_global_functions(vk_functions *vk) {
-	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name)                                   \
-		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(NULL, "vk" #name);     \
-		if(vk->name == NULL) {                                                   \
-			error_log("Could not load global level function: vk" #name);         \
-			return false;                                                        \
-		} else {                                                                 \
-			debug_log("Successfully loaded global Vulkan function: vk" #name);   \
+	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name)                                           \
+		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(NULL, "vk" #name);             \
+		if(vk->name == NULL) {                                                           \
+			error_log("Could not load global level function: vk" #name);                 \
+			return false;                                                                \
+		} else {                                                                         \
+			debug_log("Successfully loaded global Vulkan function: vk" #name);           \
 		}
 
 	#include "list.inl"
@@ -64,30 +64,30 @@ bool load_global_functions(vk_functions *vk) {
 	return true;
 }
 
-bool load_instance_vulkan_functions(LIB_TYPE *vulkan_lib, vk_function *vk, VkInstance instance, 
-	const char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE]) 
+bool load_instance_vulkan_functions(vk_functions *vk, VkInstance instance,
+	const char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE])
 {
-	#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) \
-		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name); \
-		if (vk->name == NULL) { \
-			error_log("Could not load instance level function: vk", #name); \
-			return false; \
-		} else { \
-			debug_log("Successfully loaded instance level function: vk", #name) \ 
+	#define INSTANCE_LEVEL_VULKAN_FUNCTION(name)                                         \
+		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name);         \
+		if (vk->name == NULL) {                                                          \
+			error_log("Could not load instance level function: vk" #name);               \
+			return false;                                                                \
+		} else {                                                                         \
+			debug_log("Successfully loaded instance level function: vk" #name);          \
 		}
-	
-	#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, extension) \ 
-		for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) { \
-			if (strcmp(#extension, loaded_extensions[i]) == 0) { \
+
+	#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, extension)               \
+		for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) {                             \
+			if (strcmp(#extension, loaded_extensions[i]) == 0) {                         \
 				vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name); \
-				if (vk->name == NULL) { \
-					error_log("Could not load instance level function: vk", #name); \
-					return false; \
-				} else { \
-					debug_log("Successfully loaded instance level function: vk", #name) \ 
-				} \
-			} \
-		} 
+				if (vk->name == NULL) {                                                  \
+					error_log("Could not load instance level function: vk" #name);       \
+					return false;                                                        \
+				} else {                                                                 \
+					debug_log("Successfully loaded instance level function: vk" #name);  \
+				}                                                                        \
+			}                                                                            \
+		}
 
 	#include "list.inl"
 

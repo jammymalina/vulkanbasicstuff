@@ -1,6 +1,20 @@
 #include "strcatcpy.h"
+#include <stdio.h>
 
-size_t nstrcpy(char* dst, const char* src, size_t sz) {
+char* nstrncpy(char *dst, const char *src, size_t n) {
+    char *s = dst;
+    while (n > 0 && *src != '\0') {
+		*s++ = *src++;
+		--n;
+    }
+    while (n > 0) {
+		*s++ = '\0';
+		--n;
+    }
+    return dst;
+}
+
+size_t nstrlcpy(char* dst, const char* src, size_t sz) {
 	char *d = dst;
 	const char *s = src;
 	size_t n = sz;
@@ -15,6 +29,7 @@ size_t nstrcpy(char* dst, const char* src, size_t sz) {
 
 	/* Not enough room in dst, add NUL and traverse rest of src */
 	if (n == 0) {
+		printf("Not enough room in fucking dist\n");
 		if (sz != 0)
 			*d = '\0';		/* NUL-terminate dst */
 		while (*s++);

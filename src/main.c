@@ -11,13 +11,9 @@ int main() {
 
 	bool success = load_basic_vulkan_functions(&vulkan_lib, &vk) 
 		&& load_extensions(&vk, &store)
-		&& create_instance(&vk, &store, "./config/app.config");
-	
-	debug_log("Supported extensions: "); 
-	for (size_t i = 0; i < store.available_extensions_count; i++) {
-		debug_log("  %s, version: %d", store.available_extensions[i].extensionName, 
-				store.available_extensions[i].specVersion);
-	}
+		&& create_instance(&vk, &store, "./config/app.config")
+		&& load_instance_vulkan_functions(&vk, store.instance, store.loaded_extensions)
+		&& load_devices(&vk, &store);
 
 	if (!success) {
 		goto exit_program;
