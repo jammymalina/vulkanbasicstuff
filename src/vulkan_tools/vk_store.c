@@ -204,7 +204,7 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 				error_log("Problem with memory allocation.");
 				return false;
 			}
-			strlcpy(ext[i], store->loaded_extensions[i], ext_size);
+			nstrcpy(ext[i], store->loaded_extensions[i], ext_size);
 		}
 	} 
 

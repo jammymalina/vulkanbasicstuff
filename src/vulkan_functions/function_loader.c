@@ -1,5 +1,6 @@
 #include "function_loader.h"
 
+#include <string.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include "../logger/logger.h"
@@ -25,7 +26,7 @@ bool connect_to_vulkan_library(LIB_TYPE *vulkan_lib) {
 	return true;
 }
 
-bool load_all_vulkan_functions(LIB_TYPE *vulkan_lib, vk_functions *vk) {
+bool load_basic_vulkan_functions(LIB_TYPE *vulkan_lib, vk_functions *vk) {
 	bool success = connect_to_vulkan_library(vulkan_lib)
 		&& load_exported_vulkan_function(*vulkan_lib, vk) 
 		&& load_global_functions(vk);
@@ -57,6 +58,36 @@ bool load_global_functions(vk_functions *vk) {
 		} else {                                                                 \
 			debug_log("Successfully loaded global Vulkan function: vk" #name);   \
 		}
+
+	#include "list.inl"
+
+	return true;
+}
+
+bool load_instance_vulkan_functions(LIB_TYPE *vulkan_lib, vk_function *vk, VkInstance instance, 
+	const char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE]) 
+{
+	#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) \
+		vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name); \
+		if (vk->name == NULL) { \
+			error_log("Could not load instance level function: vk", #name); \
+			return false; \
+		} else { \
+			debug_log("Successfully loaded instance level function: vk", #name) \ 
+		}
+	
+	#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, extension) \ 
+		for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) { \
+			if (strcmp(#extension, loaded_extensions[i]) == 0) { \
+				vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name); \
+				if (vk->name == NULL) { \
+					error_log("Could not load instance level function: vk", #name); \
+					return false; \
+				} else { \
+					debug_log("Successfully loaded instance level function: vk", #name) \ 
+				} \
+			} \
+		} 
 
 	#include "list.inl"
 

@@ -6,6 +6,7 @@
 #include <stdlib.h> 
 #include <errno.h>
 #include "../logger/logger.h"
+#include "../utils/strcatcopy.h"
 #include "vulkan_limits.h"
 
 #define NO_APP_CONFIG 0 
@@ -46,7 +47,7 @@ static size_t node_scalar_value_get(yaml_node_t *node, char *dest, size_t dest_s
 		return 0;
     if (node->data.scalar.length >= dest_size)
 		return 0;
-	strncpy(dest, (char*) node->data.scalar.value, node->data.scalar.length);
+	nstrcpy(dest, (char*) node->data.scalar.value, node->data.scalar.length);
 	dest[node->data.scalar.length + 1] = '\0';	
 	return node->data.scalar.length + 1;	
 }	

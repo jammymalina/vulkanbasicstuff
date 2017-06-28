@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-size_t strlcpy(char *dst, const char *src, size_t sz);
-size_t strlcat(char *dst, const char *src, size_t sz);
+size_t nstrcpy(char *dst, const char *src, size_t sz);
+size_t nstrcat(char *dst, const char *src, size_t sz);
 
 #if defined(__cplusplus)
 }

@@ -1,6 +1,6 @@
 #include "strcatcpy.h"
 
-size_t strlcpy(char* dst, const char* src, size_t sz) {
+size_t nstrcpy(char* dst, const char* src, size_t sz) {
 	char *d = dst;
 	const char *s = src;
 	size_t n = sz;
@@ -23,7 +23,7 @@ size_t strlcpy(char* dst, const char* src, size_t sz) {
 	return(s - src - 1);	/* count does not include NUL */
 }
 
-size_t strlcat(char *dst, const char *src, size_t sz) {
+size_t nstrcat(char *dst, const char *src, size_t sz) {
 	char *d = dst;
 	const char *s = src;
 	size_t n = sz;

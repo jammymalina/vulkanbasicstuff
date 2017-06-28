@@ -9,7 +9,7 @@ int main() {
 	vk_functions vk;
 	vk_store store;
 
-	bool success = load_all_vulkan_functions(&vulkan_lib, &vk) 
+	bool success = load_basic_vulkan_functions(&vulkan_lib, &vk) 
 		&& load_extensions(&vk, &store)
 		&& create_instance(&vk, &store, "./config/app.config");
 	

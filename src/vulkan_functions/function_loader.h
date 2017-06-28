@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "functions.h"
+#include "../vulkan_tools/vulkan_limits.h"
 
 #if defined _WIN32 
 	#include <windows.h> 
@@ -17,7 +18,9 @@
 #endif
 
 bool connect_to_vulkan_library(LIB_TYPE *vulkan_lib);
-bool load_all_vulkan_functions(LIB_TYPE *vulkan_lib, vk_functions *vk); 
+bool load_basic_vulkan_functions(LIB_TYPE *vulkan_lib, vk_functions *vk); 
+bool load_instance_vulkan_functions(LIB_TYPE *vulkan_lib, vk_function *vk, VkInstance instance, 
+	const char extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE]);
 
 #endif // VULKAN_FUNCTION_LOADER_H
 
