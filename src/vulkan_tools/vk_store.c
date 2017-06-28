@@ -183,12 +183,13 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 	copy_application_config(&store->application_info, &app_info);
 	store->loaded_extensions_count = vk_info.desired_extensions_count;
 
-	char **ext = (char**) malloc(store->loaded_extensions_count * sizeof(char*));
-	if (*ext == NULL) {
-		error_log("Problem with the memory allocation.");
-		return false; 
-	}
+	char **ext = NULL;
 	if (store->loaded_extensions_count > 0) {
+		ext = (char**) malloc(store->loaded_extensions_count * sizeof(char*));
+		if (*ext == NULL) {
+			error_log("Problem with the memory allocation.");
+			return false; 
+		}
 		for (size_t i = 0; i < store->loaded_extensions_count; i++) {
 			if (!is_vulkan_extension_supported(store->available_extensions, store->available_extensions_count, 
 				vk_info.desired_extensions[i]))
@@ -232,7 +233,7 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 		.enabledLayerCount       = 0,
 		.ppEnabledLayerNames     = NULL,
 		.enabledExtensionCount   = store->loaded_extensions_count,
-		.ppEnabledExtensionNames = (const char* const*) ext
+		.ppEnabledExtensionNames = ext ? (const char* const*) ext : NULL
 	};
 
 	VkResult result = vk->CreateInstance(&vk_instance_create_info, NULL, &store->instance);
@@ -242,9 +243,11 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 	} else {
 		debug_log("Successfully created the instance.");
 	}
-	for (size_t i = 0; i < store->loaded_extensions_count; i++)
-		free(ext[i]); 
-	free(ext);
+	if (ext) {
+		for (size_t i = 0; i < store->loaded_extensions_count; i++)
+			free(ext[i]); 
+		free(ext);
+	}
 
 	return true;
 }
