@@ -2,6 +2,7 @@
     "files.associations": {
         "vulkan.h": "c",
         "logger.h": "c",
-        "vk_store.h": "c"
+        "vk_store.h": "c",
+        "functions.h": "c"
     }
 }

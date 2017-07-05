@@ -2,7 +2,8 @@ TARGET   = vulkanapp
 
 CC       = gcc
 # compiling flags here
-CFLAGS = -std=c11 -flto -O3 -march=native
+# CFLAGS = -std=c11 -flto -O3 -march=native 
+CFLAGS = -std=c11 -Wall -g3
 
 LINKER   = gcc -o
 # linking flags here

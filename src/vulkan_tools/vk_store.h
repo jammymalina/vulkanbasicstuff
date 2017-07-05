@@ -26,14 +26,8 @@ typedef struct {
 typedef struct {
 	uint32_t apiVersion;
 
-	uint32_t available_extensions_count; 
-	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
-
 	uint32_t loaded_extensions_count;
 	char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
-
-	uint32_t available_devices_count; 
-	VkPhysicalDevice available_devices[MAX_VULKAN_DEVICES];
 
 	VkInstance instance;	
 
@@ -48,9 +42,9 @@ void init_default_vulkan_config(vulkan_config *vk_info);
 void copy_vulkan_config(vulkan_config *dest, const vulkan_config *src); 
 void vulkan_config_log(const vulkan_config *vk_info);
 
-bool load_extensions(const vk_functions *vk, vk_store *store);
-bool create_instance(const vk_functions *vk, vk_store *store, const char *config_filename); 
-bool load_devices(const vk_functions *vk, vk_store *store);
+void init_vulkan_store(vk_store *store);
+void destroy_vulkan_store(vk_store *store);
+bool create_instance(const vk_functions *vk, vk_store *store, const char *config_filename);
 
 #endif // VULKAN_STORE_H
 

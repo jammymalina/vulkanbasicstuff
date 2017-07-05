@@ -85,36 +85,19 @@ void vulkan_config_log(const vulkan_config *vk_info) {
 	);
 }
 
-bool load_extensions(const vk_functions *vk, vk_store *store) {
-	store->available_extensions_count = 0; 
-	VkResult result = VK_SUCCESS; 
-
-	result = vk->EnumerateInstanceExtensionProperties(NULL, &store->available_extensions_count, NULL);
-	if (result != VK_SUCCESS || store->available_extensions_count == 0) {
-		error_log("Could not get the number of Vulkan extensions.");	
-		return false;
-	} else {
-		debug_log("Found %d extensions.", store->available_extensions_count);
-	}
-	if (store->available_extensions_count > MAX_VULKAN_EXTENSIONS) {
-		error_log("Not enough space for extensions.");
-		return false;
-	}
-	
-	result = vk->EnumerateInstanceExtensionProperties(NULL, &store->available_extensions_count, 
-		&store->available_extensions[0]);
-	if (result != VK_SUCCESS || store->available_extensions_count == 0) {
-		error_log("Could not enumerate Vulkan extensions.");
-		return false;
-	} else {
-		debug_log("Successfully enumerated %d extensions:", store->available_extensions_count);
-		for (size_t i = 0; i < store->available_extensions_count; i++) {
-			debug_log("  %s, version: %d", store->available_extensions[i].extensionName, 
-					store->available_extensions[i].specVersion);
+void init_vulkan_store(vk_store *store) {
+	store->apiVersion = make_vulkan_version(1, 0, 0);
+	store->loaded_extensions_count = 0;
+	for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) {
+		for (size_t j = 0; j < VK_MAX_EXTENSION_NAME_SIZE; j++) {
+			store->loaded_extensions[i][j] = '\0';
 		}
 	}
+	init_default_application_config(&store->application_info);
+}
 
-	return true;
+void destroy_vulkan_store(vk_store *store) {
+	// TODO: destructor 
 }
 
 bool create_instance(const vk_functions *vk, vk_store *store, const char *config_filename) {
@@ -190,12 +173,17 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 	char **ext = NULL;
 	if (store->loaded_extensions_count > 0) {
 		ext = (char**) malloc(store->loaded_extensions_count * sizeof(char*));
-		if (*ext == NULL) {
+		if (ext == NULL) {
 			error_log("Problem with the memory allocation.");
 			return false; 
 		}
+
+		VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
+		uint32_t available_extensions_count = 0;
+		get_available_extensions(vk, available_extensions, &available_extensions_count);
+
 		for (size_t i = 0; i < store->loaded_extensions_count; i++) {
-			if (!is_vulkan_extension_supported(store->available_extensions, store->available_extensions_count, 
+			if (!is_vulkan_extension_supported(available_extensions, available_extensions_count, 
 				vk_info.desired_extensions[i]))
 			{
 				error_log("Extension %s not supported.", vk_info.desired_extensions[i]);
@@ -251,32 +239,6 @@ bool create_instance(const vk_functions *vk, vk_store *store, const char *config
 		for (size_t i = 0; i < store->loaded_extensions_count; i++)
 			free(ext[i]); 
 		free(ext);
-	}
-
-	return true;
-}
-
-bool load_devices(const vk_functions *vk, vk_store *store) {
-	store->available_devices_count = 0; 
-
-	VkResult result = vk->EnumeratePhysicalDevices(store->instance, &store->available_devices_count, NULL); 
-	if (result != VK_SUCCESS || store->available_devices_count == 0) {
-		error_log("Could not get the number of Vulkan devices.");
-	} else {
-		debug_log("Found %d device(s).", store->available_devices_count);
-	}
-	if (store->available_devices_count > MAX_VULKAN_DEVICES) {
-		error_log("Not enough space for devices.");
-		return false;
-	}
-	
-	result = vk->EnumeratePhysicalDevices(store->instance, &store->available_devices_count, 
-		&store->available_devices[0]);
-	if (result != VK_SUCCESS || store->available_devices_count == 0) {
-		error_log("Could not enumerate Vulkan devices.");
-		return false;
-	} else {
-		debug_log("Successfully enumerated %d device(s).", store->available_devices_count);
 	}
 
 	return true;

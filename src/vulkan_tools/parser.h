@@ -7,6 +7,7 @@
 #include <errno.h>
 #include "../logger/logger.h"
 #include "../utils/strcatcpy.h"
+#include "../utils/trim.h"
 #include "vulkan_limits.h"
 
 #define NO_APP_CONFIG 0 
@@ -96,6 +97,16 @@ static int parse_version(yaml_document_t *document, yaml_node_t *node, long vers
 static int parse_string_sequence(yaml_document_t *document, yaml_node_t *node, 
 	char *strings, size_t max_num_of_strings, size_t max_string_size, size_t *strings_count)
 {
+	*strings_count = 0;
+	if (node->type == YAML_NO_NODE) {
+		return VALID_APP_CONFIG;
+	}
+	if (node->type == YAML_SCALAR_NODE) {
+		char dest[256];
+		node_scalar_value_get(node, dest, 256);
+		trim(dest);
+		return strcmp(dest, "") == 0 ? VALID_APP_CONFIG : INVALID_APP_CONFIG;
+	}
 	if (node->type != YAML_SEQUENCE_NODE)
 		return INVALID_APP_CONFIG;
 	size_t i = 0;
@@ -122,6 +133,11 @@ static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulka
 	if (node->type != YAML_MAPPING_NODE) 
 		return INVALID_APP_CONFIG;
 	char extensions_values[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
+	for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) {
+		for (size_t j = 0; j < VK_MAX_EXTENSION_NAME_SIZE; j++) {
+			extensions_values[i][j] = '\0';
+		}
+	}
 	long version_value[3];
 	yaml_node_t *next_node;
 	yaml_node_pair_t *iter;	
@@ -155,13 +171,13 @@ static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulka
 					return PARSER_ERROR;
 				}
 				size_t extensions_values_count;
-				int status = parse_string_sequence(document, next_node,&extensions_values[0][0], 
+				int status = parse_string_sequence(document, next_node, &extensions_values[0][0], 
 					MAX_VULKAN_EXTENSIONS, VK_MAX_EXTENSION_NAME_SIZE, &extensions_values_count);
 				if (status != VALID_APP_CONFIG) {
 					if (status == INVALID_APP_CONFIG)
-						error_log("Error while parsing the vulkan version property, the prop is invalid.");
+						error_log("Error while parsing the vulkan extensions property, the prop is invalid.");
 					else 
-						error_log("Parser error, location: the vulkan version node.");
+						error_log("Parser error, location: the vulkan extensions node.");
 					return status;
 				}
 				vk_info->desired_extensions_count = extensions_values_count; 
@@ -180,7 +196,7 @@ static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulka
 static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, application_config *app_info) {
 	if (node->type != YAML_MAPPING_NODE) 
 		return INVALID_APP_CONFIG;
-	char value[STORE_FIELD_SIZE];
+	char value[STORE_FIELD_SIZE] = "";
 	long version_value[3];
 	yaml_node_t *next_node;
 	yaml_node_pair_t *iter;
@@ -202,7 +218,7 @@ static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, appli
 			} else if (node_key_equals(next_node, "version")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the engine version node.");
+					error_log("Par	ser error, location: the engine version node.");
 					return PARSER_ERROR;
 				}
 				int status = parse_version(document, next_node, version_value);
@@ -235,7 +251,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 		return INVALID_APP_CONFIG;
 	yaml_node_pair_t *iter;
 	yaml_node_t *next_node;
-	char value[STORE_FIELD_SIZE];
+	char value[STORE_FIELD_SIZE] = "";
 	long version_value[3];
 	for (iter = node->data.mapping.pairs.start; iter < node->data.mapping.pairs.top; iter++) {
 		next_node = yaml_document_get_node(document, iter->key);
@@ -297,7 +313,7 @@ static int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 				}
 				int status = parse_vulkan_node(document, next_node, vk_info);
 				if (status != VALID_APP_CONFIG) {
-					error_log("'Error while parsing the vulkan property.");
+					error_log("Error while parsing the vulkan property.");
 					return status;
 				}
 			}
