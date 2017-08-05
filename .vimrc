@@ -19,8 +19,8 @@ let g:syntastic_error_symbol="✗"
 let g:syntastic_c_compiler_options="-std=c11"
 let g:syntastic_c_include_dirs=[]
 
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+let NERDTreeMinimalUI=1
+let NERDTreeDirArrows=1
 
 let g:ycm_global_ycm_extra_conf = "./.ycm_extra_conf.py"
 

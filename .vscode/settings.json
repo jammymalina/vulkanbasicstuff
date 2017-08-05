@@ -1,8 +1,7 @@
 {
     "files.associations": {
-        "vulkan.h": "c",
-        "logger.h": "c",
-        "vk_store.h": "c",
-        "functions.h": "c"
+        "vk_config.h": "c",
+        "getopt.h": "c",
+        "vulkan.h": "c"
     }
 }

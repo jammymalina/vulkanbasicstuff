@@ -3,6 +3,7 @@
 #include "vulkan_functions/function_loader.h"
 #include "vulkan_tools/vk_store.h"
 #include "vulkan_tools/utils.h"
+#include "vulkan_tools/string_utils.h"
 #include "logger/logger.h"
 
 int main() {
@@ -13,7 +14,7 @@ int main() {
 	init_vulkan_store(&store);
 
 	bool success = load_basic_vulkan_functions(&vulkan_lib, &vk) 
-		&& create_instance(&vk, &store, "./config/app.config")
+		&& init_store_from_config(&vk, &store, "./config/app.config")
 		&& load_instance_vulkan_functions(&vk, store.instance, store.loaded_extensions);
 	
 	if (!success) {
@@ -38,9 +39,18 @@ int main() {
 	VkPhysicalDeviceFeatures physical_device_features;
 	get_device_features_and_props(&vk, available_devices[0], 
 			&physical_device_features, &physical_device_props);
-		
-	
-	
+	physical_device_features_log(&physical_device_features);
+	physical_device_props_log(&physical_device_props);	
+
+	uint32_t queue_props_count = 0; 
+	VkQueueFamilyProperties queue_props[MAX_QUEUE_PROPS];
+	get_available_queue_props(&vk, available_devices[0], queue_props, &queue_props_count); 
+	debug_log("Found %d queue family propertie(s)", queue_props_count);
+
+	for (size_t i = 0; i < queue_props_count; i++) {
+		queue_props_log(&queue_props[i]);
+	}
+
 	exit_program:
 	if (vulkan_lib != NULL) { 
 		FREE_LIB(vulkan_lib);
