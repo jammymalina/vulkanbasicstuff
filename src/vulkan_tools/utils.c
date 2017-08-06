@@ -240,6 +240,36 @@ bool is_vulkan_extension_supported(const VkExtensionProperties available_extensi
 	return false;
 }
 
+bool are_vulkan_extensions_supported(const VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS],
+	uint32_t available_extensions_count, const char desired_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE],
+	uint32_t desired_extensions_count) 
+{
+	for (size_t i = 0; i < desired_extensions_count; i++) {
+		if (!is_vulkan_extension_supported(available_extensions, available_extensions_count, desired_extensions[i])) {
+			return false; 
+		}
+	}
+	return true;	
+}
+
+bool is_device_supported(const vk_functions *vk, 
+	VkPhysicalDevice device,
+	const char desired_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE], uint32_t desired_extensions_count,
+	VkPhysicalDeviceFeatures *desired_features) 
+{
+	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
+	uint32_t available_extensions_count = 0;
+	bool success = get_device_extensions(vk, device, available_extensions, &available_extensions_count);
+	if (!success)
+		return false;
+	
+	VkPhysicalDeviceFeatures available_features;
+	get_device_features(vk, device, &available_features);
+
+	return are_vulkan_extensions_supported(available_extensions, available_extensions_count, desired_extensions, 
+		desired_extensions_count) && are_vulkan_device_features_supported(desired_features, &available_features);
+}
+
 bool get_available_extensions(const vk_functions *vk, 
 	VkExtensionProperties *available_extensions, uint32_t *available_extensions_count) 
 {
@@ -315,13 +345,6 @@ bool get_device_extensions(const vk_functions *vk,
 	}
 	
 	return true;
-}
-
-void get_device_features_and_props(const vk_functions *vk, VkPhysicalDevice physical_device, 
-		VkPhysicalDeviceFeatures *device_features, VkPhysicalDeviceProperties *device_props) 
-{
-	vk->GetPhysicalDeviceFeatures(physical_device, device_features);
-	vk->GetPhysicalDeviceProperties(physical_device, device_props);
 }
 
 bool get_available_queue_props(const vk_functions *vk, VkPhysicalDevice physical_device,

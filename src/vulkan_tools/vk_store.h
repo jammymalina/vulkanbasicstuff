@@ -16,6 +16,10 @@ typedef struct {
 	uint32_t loaded_extensions_count;
 	char loaded_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
 
+	uint32_t loaded_device_extensions_count;
+	char loaded_device_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
+	VkPhysicalDeviceFeatures device_features;
+
 	VkInstance instance;
 	VkPhysicalDevice physical_device;
 	VkDevice device;
@@ -26,11 +30,7 @@ typedef struct {
 } vk_store; 
 
 void init_vulkan_store(vk_store *store);
-void destroy_vulkan_store(vk_store *store);
-bool init_store_from_config(const vk_functions *vk, vk_store *store, const char *config_filename);
-bool add_physical_device(const vk_functions *vk, vk_store *store);
-bool add_queue_balancer(const vk_functions *vk, vk_store *store);
-bool add_device(const vk_functions *vk, vk_store *store);
+void destroy_vulkan_store(const vk_functions *vk, vk_store *store);
+bool init_store_from_config(vk_functions *vk, vk_store *store, const char *config_filename);
 
 #endif // VULKAN_STORE_H
-

@@ -6,6 +6,12 @@
 #include "utils.h"
 #include "../math/math_function.h"
 
+void init_empty_queue_balancer(queue_balancer *qb) {
+	qb->queue_families_count = 0;
+	for (size_t i = 0; i < MAX_QUEUE_FAMILIES; i++) 
+		init_default_queue_config(&qb->queue_families[i]);
+}
+
 bool create_queue_balancer(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device) {
 	qb->queue_families_count = 0;
 	VkQueueFamilyProperties queue_props[MAX_QUEUE_PROPS];

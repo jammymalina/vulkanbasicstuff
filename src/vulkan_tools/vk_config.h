@@ -16,17 +16,25 @@ typedef struct {
 } application_config;
 
 typedef struct {
+	unsigned long desired_version[3];
+
 	uint32_t desired_extensions_count;
 	char desired_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
+
+	uint32_t desired_device_extensions_count;
+	char desired_device_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
+
 	VkPhysicalDeviceFeatures desired_device_features;
-	unsigned long desired_version[3];
 } vulkan_config;
 
 typedef struct {
 	char name[MAX_QUEUE_NAME_SIZE];
+
 	VkQueueFamilyProperties properties;
+
 	uint32_t queue_family_index;
 	uint32_t queue_count;
+
 	float priorities[MAX_QUEUE_COUNT];
 } queue_family_config;
 

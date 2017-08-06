@@ -12,6 +12,7 @@ typedef struct {
 	uint32_t queue_families_count;
 } queue_balancer;
 
+void init_empty_queue_balancer(queue_balancer *qb);
 bool create_queue_balancer(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device);
 
 #endif // QUEUE_BALANCER_H

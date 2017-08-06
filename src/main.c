@@ -11,14 +11,19 @@ int main() {
 	vk_functions vk;
 	vk_store store;
 
-	init_vulkan_store(&store);
-
 	bool success = load_basic_vulkan_functions(&vulkan_lib, &vk) 
-		&& init_store_from_config(&vk, &store, "./config/app.config")
-		&& load_instance_vulkan_functions(&vk, store.instance, store.loaded_extensions);
+		&& init_store_from_config(&vk, &store, "./config/app.config");
 	
-	if (!success) {
+	if (!success)
 		goto exit_program;
+	
+	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
+	uint32_t available_extensions_count = 0;
+	get_available_extensions(&vk, available_extensions, &available_extensions_count);
+	debug_log("Successfully enumerated %d extensions:", available_extensions_count);
+	for (size_t i = 0; i < available_extensions_count; i++) {
+		debug_log("  %s, version: %d", available_extensions[i].extensionName, 
+				available_extensions[i].specVersion);
 	}
 
 	VkPhysicalDevice available_devices[MAX_VULKAN_DEVICES];
@@ -29,7 +34,7 @@ int main() {
 	uint32_t extensions_count = 0;
 	get_device_extensions(&vk, available_devices[0], device_extensions, &extensions_count);  
 	
-	debug_log("Successfully enumerated %d extensions:", extensions_count);
+	debug_log("Successfully enumerated device %d extensions:", extensions_count);
 	for (size_t i = 0; i < extensions_count; i++) {
 		debug_log("  %s, version: %d", device_extensions[i].extensionName, 
 				device_extensions[i].specVersion);
@@ -52,6 +57,7 @@ int main() {
 	}
 
 	exit_program:
+	destroy_vulkan_store(&vk, &store);
 	if (vulkan_lib != NULL) { 
 		FREE_LIB(vulkan_lib);
 	}

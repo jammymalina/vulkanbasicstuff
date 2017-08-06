@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <string.h>
 #include <limits.h>
 #include <stdlib.h> 
 #include <errno.h>
@@ -7,9 +8,9 @@
 #include "../utils/strcatcpy.h"
 #include "../utils/trim.h"
 #include "vulkan_limits.h"
-#include <string.h>
+#include "utils.h"
 
-bool parse_unsigned_long(const char *str, unsigned long *val) {
+static bool parse_unsigned_long(const char *str, unsigned long *val) {
 	char *temp;
 	errno = 0;
 	*val = strtoul(str, &temp, 0);
@@ -18,7 +19,7 @@ bool parse_unsigned_long(const char *str, unsigned long *val) {
 		*val > LONG_MAX);
 }
 
-int version_index_get(const char *version) {
+static int version_index_get(const char *version) {
 	if (strcmp(version, "major") == 0) {
 		return 0;
 	}
@@ -31,29 +32,34 @@ int version_index_get(const char *version) {
 	return -1;
 }
 
-bool node_key_equals(yaml_node_t *node, const char *str) {
+static bool node_key_equals(yaml_node_t *node, const char *str) {
 	if (node->type != YAML_SCALAR_NODE) 
 		return false; 
 	return strcmp((char*) node->data.scalar.value, str) == 0;
 }
 
-size_t node_scalar_value_get(yaml_node_t *node, char *dest, size_t dest_size) {
+static size_t node_scalar_value_get(yaml_node_t *node, char *dest, size_t dest_size) {
+	for (size_t i = 0; i < dest_size; i++) {
+		dest[i] = '\0';
+	}
 	if (node->type != YAML_SCALAR_NODE) 
 		return 0;
     if (node->data.scalar.length >= dest_size)
+		return 0;
+	if (node->data.scalar.length == 0)
 		return 0;
 	nstrncpy(dest, (char*) node->data.scalar.value, node->data.scalar.length);
 	return node->data.scalar.length + 1;	
 }	
 
-int node_scalar_number_value_get(yaml_node_t *node, unsigned long *dest) {
+static int node_scalar_number_value_get(yaml_node_t *node, unsigned long *dest) {
 	if (node->type != YAML_SCALAR_NODE) 
 		return INVALID_APP_CONFIG; 
 	bool success = parse_unsigned_long((char*) node->data.scalar.value, dest);
 	return success ? VALID_APP_CONFIG : INVALID_APP_CONFIG;
 }
 
-int parse_version(yaml_document_t *document, yaml_node_t *node, long version[3]) {
+static int parse_version(yaml_document_t *document, yaml_node_t *node, long version[3]) {
 	if (node->type != YAML_MAPPING_NODE)
 		return INVALID_APP_CONFIG;
 	version[0] = version[1] = version[3] = -1; 
@@ -88,13 +94,12 @@ int parse_version(yaml_document_t *document, yaml_node_t *node, long version[3])
 	return VALID_APP_CONFIG;
 }
 
-int parse_string_sequence(yaml_document_t *document, yaml_node_t *node, 
+static int parse_string_sequence(yaml_document_t *document, yaml_node_t *node, 
 	char *strings, size_t max_num_of_strings, size_t max_string_size, size_t *strings_count)
 {
 	*strings_count = 0;
-	if (node->type == YAML_NO_NODE) {
+	if (node->type == YAML_NO_NODE)
 		return VALID_APP_CONFIG;
-	}
 	if (node->type == YAML_SCALAR_NODE) {
 		char dest[256];
 		node_scalar_value_get(node, dest, 256);
@@ -123,10 +128,9 @@ int parse_string_sequence(yaml_document_t *document, yaml_node_t *node,
 	return VALID_APP_CONFIG;
 }
 
-int parse_device_features(yaml_document_t *document, yaml_node_t *node, VkPhysicalDeviceFeatures *features) {
-	if (node->type == YAML_NO_NODE) {
+static int parse_device_features(yaml_document_t *document, yaml_node_t *node, VkPhysicalDeviceFeatures *features) {
+	if (node->type == YAML_NO_NODE)
 		return VALID_APP_CONFIG;
-	}
 	if (node->type == YAML_SCALAR_NODE) {
 		char dest[256];
 		node_scalar_value_get(node, dest, 256);
@@ -145,12 +149,76 @@ int parse_device_features(yaml_document_t *document, yaml_node_t *node, VkPhysic
 		if (next_node->type != YAML_SCALAR_NODE) 
 			return INVALID_APP_CONFIG;
 
-		set_vulkan_device_feature_prop(features, (const char*) next_node->data.scalar.value, VK_TRUE);
+		bool success = 
+			set_vulkan_device_feature_prop(features, (const char*) next_node->data.scalar.value, VK_TRUE);
+		success = true;
+		if (!success)
+			return INVALID_APP_CONFIG;
 	}
 	return VALID_APP_CONFIG;
 }
 
-int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulkan_config *vk_info) {
+static int parse_vulkan_device_node(yaml_document_t *document, yaml_node_t *node, vulkan_config *vk_info) {
+	if (node->type != YAML_MAPPING_NODE) 
+		return INVALID_APP_CONFIG;
+	char extensions_values[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
+	for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) {
+		for (size_t j = 0; j < VK_MAX_EXTENSION_NAME_SIZE; j++) {
+			extensions_values[i][j] = '\0';
+		}
+	}
+	yaml_node_t *next_node;
+	yaml_node_pair_t *iter;	
+	for (iter = node->data.mapping.pairs.start; iter < node->data.mapping.pairs.top; iter++) {
+		next_node = yaml_document_get_node(document, iter->key);
+		if (next_node) {
+			if (node_key_equals(next_node, "extensions")) {
+				next_node = yaml_document_get_node(document, iter->value);
+				if (!next_node) {
+					error_log("Parser error, location: the Vulkan device extensions node");
+					return PARSER_ERROR;
+				}
+				size_t extensions_values_count = 0;
+				int status = parse_string_sequence(document, next_node, &extensions_values[0][0], 
+					MAX_VULKAN_EXTENSIONS, VK_MAX_EXTENSION_NAME_SIZE, &extensions_values_count);
+				if (status != VALID_APP_CONFIG) {
+					if (status == INVALID_APP_CONFIG)
+						error_log("Error while parsing the Vulkan device extensions property, the prop is invalid");
+					else 
+						error_log("Parser error, location: the Vulkan device extensions node");
+					return status;
+				}
+				vk_info->desired_device_extensions_count = extensions_values_count; 
+				for (size_t i = 0; i < vk_info->desired_device_extensions_count; i++) {
+					strcpy(vk_info->desired_device_extensions[i], extensions_values[i]);
+				}
+			} else if (node_key_equals(next_node, "features")) {
+				next_node = yaml_document_get_node(document, iter->value);
+				if (!next_node) {
+					error_log("Parser error, location: the Vulkan device features node");
+					return PARSER_ERROR;
+				}
+				VkPhysicalDeviceFeatures features;
+				int status = parse_device_features(document, next_node, &features); 
+				if (status != VALID_APP_CONFIG) {
+					if (status == INVALID_APP_CONFIG) 
+						error_log("Error while parsing the Vulkan device features property, " 
+							"the prop is invalid");
+					else 
+						error_log("Parser error, location: the Vulkan device features property");
+					return status;
+				}
+				vk_info->desired_device_features = features;
+			}
+		} else {
+			error_log("Parser error, location: the Vulkan device node");
+			return PARSER_ERROR;
+		}
+	}
+	return VALID_APP_CONFIG;
+}
+
+static int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulkan_config *vk_info) {
 	if (node->type != YAML_MAPPING_NODE) 
 		return INVALID_APP_CONFIG;
 	char extensions_values[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE];
@@ -168,15 +236,15 @@ int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulkan_confi
 			if (node_key_equals(next_node, "version")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the vulkan version node");
+					error_log("Parser error, location: the Vulkan version node");
 					return PARSER_ERROR;
 				}
 				int status = parse_version(document, next_node, version_value);
 				if (status != VALID_APP_CONFIG) {
 					if (status == INVALID_APP_CONFIG)
-						error_log("Error while parsing the vulkan version property, the prop is invalid");
+						error_log("Error while parsing the Vulkan version property, the prop is invalid");
 					else 
-						error_log("Parser error, location: the vulkan version node");
+						error_log("Parser error, location: the Vulkan version node");
 					return status;
 				}
 				vk_info->desired_version[0] = version_value[0] != -1 ? 
@@ -188,7 +256,7 @@ int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulkan_confi
 			} else if (node_key_equals(next_node, "extensions")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the vulkan extensions node");
+					error_log("Parser error, location: the Vulkan extensions node");
 					return PARSER_ERROR;
 				}
 				size_t extensions_values_count = 0;
@@ -196,33 +264,36 @@ int parse_vulkan_node(yaml_document_t *document, yaml_node_t *node, vulkan_confi
 					MAX_VULKAN_EXTENSIONS, VK_MAX_EXTENSION_NAME_SIZE, &extensions_values_count);
 				if (status != VALID_APP_CONFIG) {
 					if (status == INVALID_APP_CONFIG)
-						error_log("Error while parsing the vulkan extensions property, the prop is invalid");
+						error_log("Error while parsing the Vulkan extensions property, the prop is invalid");
 					else 
-						error_log("Parser error, location: the vulkan extensions node");
+						error_log("Parser error, location: the Vulkan extensions node");
 					return status;
 				}
 				vk_info->desired_extensions_count = extensions_values_count; 
 				for (size_t i = 0; i < vk_info->desired_extensions_count; i++) {
 					strcpy(vk_info->desired_extensions[i], extensions_values[i]);
 				}
-			} else if (node_key_equals(next_node, "device_features")) {
+			} else if (node_key_equals(next_node, "device")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the vulkan device features node");
+					error_log("Parser error, location: the Vulkan device node");
 					return PARSER_ERROR;
 				}
-				VkPhysicalDeviceFeatures features;
-				parse_device_features(document, next_node, &features); 
+				int status = parse_vulkan_device_node(document, next_node, vk_info);
+				if (status != VALID_APP_CONFIG) {
+					error_log("Error while parsing the Vulkan device property");
+					return status;
+				}
 			}
 		} else {
-			error_log("Parser error, location: the engine node");
+			error_log("Parser error, location: the Vulkan node");
 			return PARSER_ERROR;
 		}
 	}
 	return VALID_APP_CONFIG;
 }
 
-int parse_engine_node(yaml_document_t *document, yaml_node_t *node, application_config *app_info) {
+static int parse_engine_node(yaml_document_t *document, yaml_node_t *node, application_config *app_info) {
 	if (node->type != YAML_MAPPING_NODE) 
 		return INVALID_APP_CONFIG;
 	char value[STORE_FIELD_SIZE] = "";
@@ -273,7 +344,7 @@ int parse_engine_node(yaml_document_t *document, yaml_node_t *node, application_
 	return VALID_APP_CONFIG;
 }
 
-int parse_application_node(yaml_document_t *document, yaml_node_t *node, 
+static int parse_application_node(yaml_document_t *document, yaml_node_t *node, 
 	application_config *app_info, vulkan_config *vk_info) 
 {
 	if (node->type != YAML_MAPPING_NODE)
@@ -337,12 +408,12 @@ int parse_application_node(yaml_document_t *document, yaml_node_t *node,
 			} else if (node_key_equals(next_node, "vulkan")) {
 				next_node = yaml_document_get_node(document, iter->value);
 				if (!next_node) {
-					error_log("Parser error, location: the application vulkan node");
+					error_log("Parser error, location: the application Vulkan node");
 					return PARSER_ERROR;
 				}
 				int status = parse_vulkan_node(document, next_node, vk_info);
 				if (status != VALID_APP_CONFIG) {
-					error_log("Error while parsing the vulkan property");
+					error_log("Error while parsing the Vulkan property");
 					return status;
 				}
 			}

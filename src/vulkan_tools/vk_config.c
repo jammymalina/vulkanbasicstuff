@@ -50,6 +50,7 @@ void init_default_vulkan_config(vulkan_config *vk_info) {
 	vk_info->desired_version[1] = 0;
 	vk_info->desired_version[2] = 0;
 	vk_info->desired_extensions_count = 0; 
+	vk_info->desired_device_extensions_count = 0;
 	set_vulkan_device_features(&vk_info->desired_device_features, VK_FALSE);
 }
 
@@ -60,10 +61,13 @@ void copy_vulkan_config(vulkan_config *dest, const vulkan_config *src) {
 
 	dest->desired_extensions_count = src->desired_extensions_count > MAX_VULKAN_EXTENSIONS ? 
 		MAX_VULKAN_EXTENSIONS : src->desired_extensions_count; 
-	const char *src_ext_ptr  = &src->desired_extensions[0][0];
-	char *dest_ext_ptr = &dest->desired_extensions[0][0];
-	for (size_t i = 0; i < src->desired_extensions_count; i++) {
-		strcpy(dest_ext_ptr + i * VK_MAX_EXTENSION_NAME_SIZE, src_ext_ptr + i * VK_MAX_EXTENSION_NAME_SIZE);
+	dest->desired_device_extensions_count = src->desired_device_extensions_count > MAX_VULKAN_EXTENSIONS ? 
+		MAX_VULKAN_EXTENSIONS : src->desired_device_extensions_count; 
+	for (size_t i = 0; i < MAX_VULKAN_EXTENSIONS; i++) {
+		for (size_t j = 0; j < VK_MAX_EXTENSION_NAME_SIZE; j++) {
+			dest->desired_extensions[i][j]        = src->desired_extensions[i][j];
+			dest->desired_device_extensions[i][j] = src->desired_device_extensions[i][j];
+		}
 	}
 
 	dest->desired_device_features = src->desired_device_features;
@@ -78,6 +82,13 @@ void vulkan_config_log(const vulkan_config *vk_info) {
 	);
 	for (size_t i = 0; i < vk_info->desired_extensions_count; i++) {
 		printf("    %s,\n", vk_info->desired_extensions[i]);
+	}
+	printf(
+		"  ],\n"
+		"  device_extensions: [\n"
+	);
+	for (size_t i = 0; i < vk_info->desired_device_extensions_count; i++) {
+		printf("    %s,\n", vk_info->desired_device_extensions[i]);
 	}
 	printf(
 		"  ]\n"
