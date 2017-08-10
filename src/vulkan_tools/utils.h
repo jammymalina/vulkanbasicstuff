@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../vulkan_functions/functions.h"
-#include "vulkan_limits.h" 
+#include "vulkan_limits.h"
 
 static inline uint32_t make_vulkan_version(uint32_t major, uint32_t minor, uint32_t patch) {
 	return (major << 22) | (minor << 12) | patch;	
@@ -71,7 +71,7 @@ static inline void set_vulkan_device_features(VkPhysicalDeviceFeatures *features
 
 static inline bool are_vulkan_device_features_supported(const VkPhysicalDeviceFeatures *available_features, 
 	const VkPhysicalDeviceFeatures *desired_features) 
-{
+{	
 	return
 		(!desired_features->robustBufferAccess ||
 			(desired_features->robustBufferAccess == available_features->robustBufferAccess)) &&
@@ -195,7 +195,7 @@ bool are_vulkan_extensions_supported(const VkExtensionProperties available_exten
 bool is_device_supported(const vk_functions *vk, 
 	VkPhysicalDevice device, 
 	const char desired_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE], uint32_t desired_extensions_count,
-	VkPhysicalDeviceFeatures *desired_features);
+	const VkPhysicalDeviceFeatures *desired_features);
 bool get_available_extensions(const vk_functions *vk, 
 	VkExtensionProperties *available_extensions, uint32_t *available_extensions_count); 
 

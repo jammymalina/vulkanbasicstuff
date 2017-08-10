@@ -2,6 +2,8 @@
     "files.associations": {
         "vk_config.h": "c",
         "getopt.h": "c",
-        "vulkan.h": "c"
+        "vulkan.h": "c",
+        "typeinfo": "cpp",
+        "type_traits": "cpp"
     }
 }

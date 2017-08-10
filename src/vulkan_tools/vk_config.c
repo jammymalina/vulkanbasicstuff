@@ -100,7 +100,7 @@ void init_default_queue_config(queue_family_config *queue_info) {
 	strcpy(queue_info->name, "");
 	queue_info->queue_count = 0;
 	queue_info->queue_family_index = 0;
-	for (size_t i = 0; i < MAX_QUEUE_COUNT; i++) {
+	for (size_t i = 0; i < MAX_QUEUE_COUNT_PER_FAMILY; i++) {
 		queue_info->priorities[i] = 1.0; 
 	}
 }	

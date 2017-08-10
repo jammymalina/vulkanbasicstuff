@@ -35,7 +35,7 @@ typedef struct {
 	uint32_t queue_family_index;
 	uint32_t queue_count;
 
-	float priorities[MAX_QUEUE_COUNT];
+	float priorities[MAX_QUEUE_COUNT_PER_FAMILY];
 } queue_family_config;
 
 void init_default_application_config(application_config *app_info);

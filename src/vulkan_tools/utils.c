@@ -249,14 +249,15 @@ bool are_vulkan_extensions_supported(const VkExtensionProperties available_exten
 			return false; 
 		}
 	}
+
 	return true;	
 }
 
 bool is_device_supported(const vk_functions *vk, 
 	VkPhysicalDevice device,
 	const char desired_extensions[MAX_VULKAN_EXTENSIONS][VK_MAX_EXTENSION_NAME_SIZE], uint32_t desired_extensions_count,
-	VkPhysicalDeviceFeatures *desired_features) 
-{
+	const VkPhysicalDeviceFeatures *desired_features) 
+{	
 	VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
 	uint32_t available_extensions_count = 0;
 	bool success = get_device_extensions(vk, device, available_extensions, &available_extensions_count);
@@ -267,7 +268,7 @@ bool is_device_supported(const vk_functions *vk,
 	get_device_features(vk, device, &available_features);
 
 	return are_vulkan_extensions_supported(available_extensions, available_extensions_count, desired_extensions, 
-		desired_extensions_count) && are_vulkan_device_features_supported(desired_features, &available_features);
+		desired_extensions_count) && are_vulkan_device_features_supported(&available_features, desired_features);
 }
 
 bool get_available_extensions(const vk_functions *vk, 
@@ -321,8 +322,8 @@ bool get_available_devices(const vk_functions *vk, VkInstance instance,
 }
 
 bool get_device_extensions(const vk_functions *vk, 
-		VkPhysicalDevice physical_device, VkExtensionProperties *device_extensions,
-		uint32_t *device_extensions_count)
+	VkPhysicalDevice physical_device, VkExtensionProperties *device_extensions,
+	uint32_t *device_extensions_count)
 
 {
 	VkResult result = vk->EnumerateDeviceExtensionProperties
@@ -348,7 +349,7 @@ bool get_device_extensions(const vk_functions *vk,
 }
 
 bool get_available_queue_props(const vk_functions *vk, VkPhysicalDevice physical_device,
-	   	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count)
+	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count)
 {
 	uint32_t props_count = 0; 
 	*queue_props_count = 0;

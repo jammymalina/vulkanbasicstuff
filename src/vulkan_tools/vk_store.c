@@ -9,7 +9,9 @@
 #include "utils.h"
 #include "../utils/strcatcpy.h"
 
-static bool create_store_instance(const vk_functions *vk, vk_store *store, const vulkan_config *vk_info, char **ext) {
+static bool create_store_instance(const vk_functions *vk, 
+	vk_store *store, const vulkan_config *vk_info, char **ext) 
+{
 	store->apiVersion = make_vulkan_version(vk_info->desired_version[0], 
 		vk_info->desired_version[1], vk_info->desired_version[2]);
 	
@@ -82,7 +84,9 @@ static bool create_store_device(const vk_functions *vk, vk_store *store, char **
 	return true;
 }
 
-static bool add_extensions(const vk_functions *vk, vk_store *store, const vulkan_config *vk_info, char ***ext_values) {
+static bool add_extensions(const vk_functions *vk, 
+	vk_store *store, const vulkan_config *vk_info, char ***ext_values) 
+{
 	store->loaded_extensions_count = vk_info->desired_extensions_count;
 
 	bool success = true;
@@ -134,12 +138,31 @@ static bool add_physical_device(const vk_functions *vk, vk_store *store, const v
 		return false;
 	}
 
-	store->physical_device = available_devices[0];
+	VkPhysicalDevice desired_devices[MAX_VULKAN_DEVICES];
+	uint32_t desired_devices_count = 0;
 
+	for (size_t i = 0; i < available_devices_count; i++) {
+		if (is_device_supported(vk, available_devices[i], vk_info->desired_device_extensions, 
+			vk_info->desired_device_extensions_count, &vk_info->desired_device_features)) 
+		{
+			desired_devices[desired_devices_count] = available_devices[i];
+			desired_devices_count++;		
+		}
+
+	}
+
+	if (desired_devices_count == 0) {
+		error_log("Couldn't find the device with the desired properties");
+		return false; 
+	}
+
+	store->physical_device = desired_devices[0];
 	return true;
 }
 
-static bool add_device_extensions(const vk_functions *vk, vk_store *store, const vulkan_config *vk_info, char ***ext_values) {
+static bool add_device_extensions(const vk_functions *vk, 
+	vk_store *store, const vulkan_config *vk_info, char ***ext_values) 
+{
 	store->loaded_device_extensions_count = vk_info->desired_device_extensions_count;
 
 	bool success = true;
@@ -153,7 +176,8 @@ static bool add_device_extensions(const vk_functions *vk, vk_store *store, const
 
 		VkExtensionProperties available_extensions[MAX_VULKAN_EXTENSIONS];
 		uint32_t available_extensions_count = 0;
-		success = get_device_extensions(vk, store->physical_device, available_extensions, &available_extensions_count); 
+		success = get_device_extensions(vk, 
+			store->physical_device, available_extensions, &available_extensions_count); 
 
 		if (!success) {
 			error_log("Error while getting avaliable device extensions");
@@ -218,6 +242,10 @@ void init_vulkan_store(vk_store *store) {
 }
 
 void destroy_vulkan_store(const vk_functions *vk, vk_store *store) {
+	if (store->device != NULL) {
+		vk->DestroyDevice(store->device, NULL);
+		store->device = NULL;	
+	}
 	if (store->instance != NULL) {
 		vk->DestroyInstance(store->instance, NULL);
 		store->instance = NULL;
@@ -299,12 +327,16 @@ bool init_store_from_config(vk_functions *vk, vk_store *store, const char *confi
 	char **ext, **dev_ext;
 	success = add_extensions(vk, store, &vk_info, &ext) && 
 		create_store_instance(vk, store, &vk_info, ext) && 
-		load_instance_vulkan_functions(vk, store->instance, store->loaded_extensions) &&
+		load_instance_vulkan_functions(vk, store->instance, store->loaded_extensions, 
+			store->loaded_extensions_count) &&
 		add_physical_device(vk, store, &vk_info) &&
 		add_device_extensions(vk, store, &vk_info, &dev_ext) &&
 		add_device_features(vk, store, &vk_info) &&
 		add_queue_balancer(vk, store) && 
-		create_store_device(vk, store, dev_ext);
+		create_store_device(vk, store, dev_ext) && 
+		load_device_level_functions(vk, store->device, store->loaded_device_extensions, 
+			store->loaded_device_extensions_count) &&
+		load_queues(vk, &store->qb, store->device);
 
 	if (!success)
 		return false;

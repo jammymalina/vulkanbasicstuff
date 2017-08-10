@@ -13,7 +13,7 @@ char* vulkan_version_to_string(uint32_t version) {
 	return version_string;
 }
 
-void physical_device_features_log(VkPhysicalDeviceFeatures *device_features) {
+void physical_device_features_log(const VkPhysicalDeviceFeatures *device_features) {
 	printf(
 		"VkPhysicalDeviceFeatures: {\n" 	
 		"  robustBufferAccess: %d\n"
@@ -147,7 +147,7 @@ const char* physical_device_type_to_string(VkPhysicalDeviceType type) {
 	}
 }
 
-void physical_device_props_log(VkPhysicalDeviceProperties *device_props) {
+void physical_device_props_log(const VkPhysicalDeviceProperties *device_props) {
 	printf(
 		"VkPhysicalDeviceProperties: {\n"
 		"  apiVersion: %s\n"
