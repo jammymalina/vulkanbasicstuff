@@ -1,6 +1,7 @@
 #ifndef VULKAN_FUNCTION_LOADER_H
 #define VULKAN_FUNCTION_LOADER_H
 
+#include <vulkan/vulkan.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "functions.h"

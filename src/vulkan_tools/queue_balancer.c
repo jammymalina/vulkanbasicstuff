@@ -20,7 +20,7 @@ void init_empty_queue_balancer(queue_balancer *qb) {
 		init_default_queue_config(&qb->queue_families[i]);
 	qb->queue_count = 0;
 	for (size_t i = 0; i < MAX_QUEUE_COUNT; i++)
-		init_queue_container(&qb->queues[i], NULL, 0);
+		init_queue_container(&qb->queues[i], VK_NULL_HANDLE, 0);
 }
 
 bool create_queue_balancer(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device) {
@@ -64,16 +64,21 @@ bool load_queues(const vk_functions *vk, queue_balancer *qb, VkDevice device) {
 	uint32_t queue_count = 0;
 	for (uint32_t i = 0; i < qb->queue_families_count; i++) {
 		for (uint32_t j = 0; j < qb->queue_families[i].queue_count; j++) {
-			get_device_queue(vk, device, qb->queue_families[i].queue_family_index, 
-				j, &qb->queues[queue_count].vk_queue); 
+			VkQueue q;
+			get_device_queue(vk, device, qb->queue_families[i].queue_family_index, j, &q); 
+			init_queue_container(&qb->queues[queue_count], q, i);
 			VkQueueFlagBits flags = qb->queue_families[i].properties.queueFlags;	
 			if (flags & VK_QUEUE_GRAPHICS_BIT) {
+				qi_add(&qb->graphics_queue_indices, queue_count);
 			}	
 			if (flags & VK_QUEUE_COMPUTE_BIT) {
+				qi_add(&qb->compute_queue_indices, queue_count);
 			}
 			if (flags & VK_QUEUE_TRANSFER_BIT) {
+				qi_add(&qb->transfer_queue_indices, queue_count);
 			}
 			if (flags & VK_QUEUE_SPARSE_BINDING_BIT) {
+				qi_add(&qb->sparse_queue_indices, queue_count);
 			}
 			queue_count++;
 		}
@@ -85,5 +90,17 @@ bool load_queues(const vk_functions *vk, queue_balancer *qb, VkDevice device) {
 void init_queue_container(queue_container *queue, VkQueue vk_queue, uint32_t family_index) {
 	queue->vk_queue = vk_queue; 
 	queue->family_index = family_index;
+}
+
+bool load_presentation_queues(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+	for (size_t i = 0; i < qb->queue_count; i++) {
+		VkBool32 presentation_supported = VK_FALSE;
+		VkResult result = vk->GetPhysicalDeviceSurfaceSupportKHR(physical_device, 
+			qb->queues[i].family_index, surface, &presentation_supported);
+		if (result == VK_SUCCESS && presentation_supported) {
+			qi_add(&qb->presentation_queue_indices, i);
+		}
+	}
+	return qb->presentation_queue_indices.size > 0;
 }
 

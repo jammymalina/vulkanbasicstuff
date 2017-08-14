@@ -232,9 +232,9 @@ void init_vulkan_store(vk_store *store) {
 		}
 	}
 
-	store->instance        = NULL; 
-	store->physical_device = NULL;
-	store->device          = NULL;
+	store->instance        = VK_NULL_HANDLE; 
+	store->physical_device = VK_NULL_HANDLE;
+	store->device          = VK_NULL_HANDLE;
 
 	set_vulkan_device_features(&store->device_features, VK_FALSE);
 	init_default_application_config(&store->application_info);
@@ -242,13 +242,13 @@ void init_vulkan_store(vk_store *store) {
 }
 
 void destroy_vulkan_store(const vk_functions *vk, vk_store *store) {
-	if (store->device != NULL) {
+	if (store->device != VK_NULL_HANDLE) {
 		vk->DestroyDevice(store->device, NULL);
-		store->device = NULL;	
+		store->device = VK_NULL_HANDLE;	
 	}
-	if (store->instance != NULL) {
+	if (store->instance != VK_NULL_HANDLE) {
 		vk->DestroyInstance(store->instance, NULL);
-		store->instance = NULL;
+		store->instance = VK_NULL_HANDLE;
 	}
 }
 
@@ -340,6 +340,8 @@ bool init_store_from_config(vk_functions *vk, vk_store *store, const char *confi
 
 	if (!success)
 		return false;
+	else 
+		debug_log("Successfully created store");
 
 	if (ext) {
 		for (size_t i = 0; i < vk_info.desired_extensions_count; i++)

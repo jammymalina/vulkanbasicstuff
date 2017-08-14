@@ -7,7 +7,7 @@ CFLAGS = -std=c11 -Wall -g3
 
 LINKER   = gcc -o
 # linking flags here
-LFLAGS   = -flto -O3 -march=native -lm -ldl -lyaml
+LFLAGS   = -flto -O3 -march=native -lm -ldl -lyaml -lSDL2
 
 # change these to set the proper directories where each files shoould be
 SRCDIR   = src
@@ -18,11 +18,13 @@ SOURCES  := $(wildcard $(SRCDIR)/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/vulkan_functions/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/vulkan_tools/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/utils/*.c)
+SOURCES  += $(wildcard $(SRCDIR)/window/*.c)
 
 INCLUDES := $(wildcard $(SRCDIR)/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_functions/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
 INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
+INCLUDES += $(wildcard $(SRCDIR)/window/*.h)
 
 INCLUDE_DIRS := 
 LIB_DIRS     := 
@@ -31,8 +33,7 @@ OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 rm       = rm -rf
 
-# DEFINES := -DYAML_VERSION_MAJOR=0 -DYAML_VERSION_MINOR=1 -DYAML_VERSION_PATCH=7 -DYAML_VERSION_STRING=\"1.7\"
-DEFINES := -DDEBUG_LOG -DPROD_LOG -DERROR_LOG
+DEFINES := -DDEBUG_LOG -DPROD_LOG -DERROR_LOG -DVK_USE_PLATFORM_WAYLAND_KHR
 
 default: $(BINDIR)/$(TARGET)
 all: default
@@ -45,7 +46,8 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils
+	@export SDL_VIDEODRIVER=wayland
+	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils $(OBJDIR)/window
 	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
