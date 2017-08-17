@@ -17,10 +17,10 @@ bool connect_to_vulkan_library(LIB_TYPE *vulkan_lib) {
 	#endif
 
 	if (*vulkan_lib == NULL) {
-		error_log("Could not connect with a Vulkan runtime library."); 
+		error_log("Could not connect with a Vulkan runtime library"); 
 		return false; 
 	} else {
-		debug_log("Successfully connected to Vulkan library.");
+		debug_log("Successfully connected to Vulkan library");
 	}
 
 	return true;

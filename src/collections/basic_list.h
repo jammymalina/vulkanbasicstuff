@@ -2,7 +2,6 @@
 #define BASIC_LIST_H
 
 #include <stddef.h>
-#include "collections_common.h"
 
 #define GENERATE_BASIC_LIST_HEADER(name, function_prefix, type, max_size)           \
     typedef struct {                                                                \

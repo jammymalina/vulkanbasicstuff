@@ -278,19 +278,19 @@ bool get_available_extensions(const vk_functions *vk,
 
 	VkResult result = vk->EnumerateInstanceExtensionProperties(NULL, available_extensions_count, NULL);
 	if (result != VK_SUCCESS || *available_extensions_count == 0) {
-		error_log("Could not get the number of Vulkan extensions.");	
+		error_log("Unable to get the number of Vulkan extensions");	
 		return false;
 	} 
 
 	if (*available_extensions_count > MAX_VULKAN_EXTENSIONS) {
-		error_log("Not enough space for extensions.");
+		error_log("Not enough space for extensions");
 		return false;
 	}
 	
 	result = vk->EnumerateInstanceExtensionProperties(NULL, available_extensions_count, 
 		available_extensions);
 	if (result != VK_SUCCESS || *available_extensions_count == 0) {
-		error_log("Could not enumerate Vulkan extensions.");
+		error_log("Unable to enumerate Vulkan extensions");
 		return false;
 	}
 
@@ -304,17 +304,18 @@ bool get_available_devices(const vk_functions *vk, VkInstance instance,
 
 	VkResult result = vk->EnumeratePhysicalDevices(instance, available_devices_count, NULL); 
 	if (result != VK_SUCCESS || *available_devices_count == 0) {
-		error_log("Could not get the number of Vulkan devices.");
+		error_log("Unable to get the number of Vulkan devices");
+		return false; 
 	}
 
 	if (*available_devices_count > MAX_VULKAN_DEVICES) {
-		error_log("Not enough space for devices.");
+		error_log("Not enough space for devices");
 		return false;
 	}
 	
 	result = vk->EnumeratePhysicalDevices(instance, available_devices_count, available_devices);
 	if (result != VK_SUCCESS || *available_devices_count == 0) {
-		error_log("Could not enumerate Vulkan devices.");
+		error_log("Unable to enumerate Vulkan devices");
 		return false;
 	}
 
@@ -329,19 +330,19 @@ bool get_device_extensions(const vk_functions *vk,
 	VkResult result = vk->EnumerateDeviceExtensionProperties
 		(physical_device, NULL, device_extensions_count, NULL);
 	if (result != VK_SUCCESS || *device_extensions_count == 0) {
-		error_log("Unable get number of physical device extensions.");
+		error_log("Unable to get number of physical device extensions");
 		return false;
 	}
 
 	if (*device_extensions_count > MAX_VULKAN_EXTENSIONS) {
-		error_log("Not enough space for Vulkan extensions."); 
+		error_log("Not enough space for Vulkan extensions"); 
 		return false;
 	}	
 
 	result = vk->EnumerateDeviceExtensionProperties
 		(physical_device, NULL, device_extensions_count, device_extensions);
 	if (result != VK_SUCCESS && *device_extensions_count == 0) {
-		error_log("Unable to enumarete physical device extensions.");
+		error_log("Unable to enumarete physical device extensions");
 		return false; 
 	}
 	
@@ -351,13 +352,65 @@ bool get_device_extensions(const vk_functions *vk,
 bool get_available_queue_props(const vk_functions *vk, VkPhysicalDevice physical_device,
 	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count)
 {
-	uint32_t props_count = 0; 
 	*queue_props_count = 0;
-	vk->GetPhysicalDeviceQueueFamilyProperties(physical_device, &props_count, NULL); 
-	if (props_count == 0 || props_count > MAX_QUEUE_PROPS) 
+	vk->GetPhysicalDeviceQueueFamilyProperties(physical_device, queue_props_count, NULL); 
+	if (*queue_props_count == 0 || *queue_props_count > MAX_QUEUE_PROPS) 
 		return false; 
-	vk->GetPhysicalDeviceQueueFamilyProperties(physical_device, &props_count, queue_props);
-	*queue_props_count = props_count;
+	vk->GetPhysicalDeviceQueueFamilyProperties(physical_device, queue_props_count, queue_props);
 	return *queue_props_count != 0;
+}
+
+bool get_available_present_modes(const vk_functions *vk, VkPhysicalDevice physical_device, 
+	VkSurfaceKHR surface, VkPresentModeKHR *present_modes, uint32_t *present_modes_count) 
+{
+	*present_modes_count = 0;
+	VkResult result = vk->GetPhysicalDeviceSurfacePresentModesKHR(physical_device, 
+		surface, present_modes_count, NULL);
+    if (result != VK_SUCCESS || *present_modes_count == 0) {
+		error_log("Unable to get physical device surface present modes");
+		return false;  
+	}
+
+	if (*present_modes_count > MAX_PRESENT_MODE_COUNT) {
+		error_log("Not enough space for physical device surface present modes");
+		return false;  
+	}
+
+	result = vk->GetPhysicalDeviceSurfacePresentModesKHR(physical_device, 
+		surface, present_modes_count, present_modes);
+	if (result != VK_SUCCESS || *present_modes_count == 0) {
+		error_log("Unable to get physical device surface present modes");
+		return false;  
+	}
+
+	return true;
+}
+
+bool get_surface_capabilities(const vk_functions *vk, VkPhysicalDevice physical_device, VkSurfaceKHR surface, 
+	VkSurfaceCapabilitiesKHR *capabilities)
+{
+	VkResult result = vk->GetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, capabilities);
+	return result == VK_SUCCESS;
+}
+
+bool present_mode_from_string(VkPresentModeKHR *dest,  const char *m) {
+	if (strcmp(m, "fifo") == 0) {
+		*dest = VK_PRESENT_MODE_FIFO_KHR;
+		return true;
+	}
+	if (strcmp(m, "immediate") == 0) {
+		*dest = VK_PRESENT_MODE_IMMEDIATE_KHR;
+		return true;
+	}
+	if (strcmp(m, "mailbox") == 0) {
+		*dest = VK_PRESENT_MODE_MAILBOX_KHR;
+		return true;
+	}
+	if (strcmp(m, "fifo_relaxed") == 0) {
+		*dest = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+		return true;
+	}
+	*dest = VK_PRESENT_MODE_FIFO_KHR;
+	return false;
 }
 

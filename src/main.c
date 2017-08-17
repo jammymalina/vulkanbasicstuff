@@ -18,8 +18,6 @@ int main() {
 		&& init_vk_window(&vk, 	&window, &store) 
 		&& load_presentation_queues(&vk, &store.qb, store.physical_device, window.surface.surface_handle);
 
-	debug_log("%s", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
 	if (!success) {
 		error_log("Error during the intialization");
 		goto exit_program;

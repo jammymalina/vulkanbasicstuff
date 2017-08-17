@@ -202,30 +202,37 @@ bool get_available_extensions(const vk_functions *vk,
 bool get_available_devices(const vk_functions *vk, VkInstance instance,
 	VkPhysicalDevice *available_devices, uint32_t *available_devices_count);
 bool get_device_extensions(const vk_functions *vk, 
-		VkPhysicalDevice physical_device, VkExtensionProperties *device_extensions, 
-		uint32_t *device_extensions_count);
+	VkPhysicalDevice physical_device, VkExtensionProperties *device_extensions, 
+	uint32_t *device_extensions_count);
 
 static inline void get_device_features(const vk_functions *vk, VkPhysicalDevice physical_device, 
-		VkPhysicalDeviceFeatures *device_features)
+	VkPhysicalDeviceFeatures *device_features)
 {
 	vk->GetPhysicalDeviceFeatures(physical_device, device_features);
 }
 
 static inline void get_device_props(const vk_functions *vk, VkPhysicalDevice physical_device, 
-		VkPhysicalDeviceProperties *device_props)
+	VkPhysicalDeviceProperties *device_props)
 {
 	vk->GetPhysicalDeviceProperties(physical_device, device_props);
 }
 
 static inline void get_device_features_and_props(const vk_functions *vk, VkPhysicalDevice physical_device, 
-		VkPhysicalDeviceFeatures *device_features, VkPhysicalDeviceProperties *device_props) 
+	VkPhysicalDeviceFeatures *device_features, VkPhysicalDeviceProperties *device_props) 
 {
 	get_device_features(vk, physical_device, device_features);
 	get_device_props(vk, physical_device, device_props);
 }
 
 bool get_available_queue_props(const vk_functions *vk, VkPhysicalDevice physical_device,
-	   	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count);
+	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count);
+
+bool get_available_present_modes(const vk_functions *vk, VkPhysicalDevice physical_device, 
+	VkSurfaceKHR surface, VkPresentModeKHR *present_modes, uint32_t *present_modes_count);
+bool get_surface_capabilities(const vk_functions *vk, VkPhysicalDevice physical_device, VkSurfaceKHR surface, 
+	VkSurfaceCapabilitiesKHR *capabilities);
+bool present_mode_from_string(VkPresentModeKHR *dest, const char *m);
+
 
 #endif // VULKAN_UTILS_H
 

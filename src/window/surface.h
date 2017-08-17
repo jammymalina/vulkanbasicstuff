@@ -8,6 +8,9 @@
 
 typedef struct {
     VkSurfaceKHR surface_handle;
+    VkPresentModeKHR present_mode;
+    VkSurfaceCapabilitiesKHR capabilities;
+    uint32_t swapchain_images_count;
 } vk_surface;
 
 bool init_surface(const vk_functions *vk, vk_surface *surface, 
