@@ -367,7 +367,7 @@ bool get_available_present_modes(const vk_functions *vk, VkPhysicalDevice physic
 	VkResult result = vk->GetPhysicalDeviceSurfacePresentModesKHR(physical_device, 
 		surface, present_modes_count, NULL);
     if (result != VK_SUCCESS || *present_modes_count == 0) {
-		error_log("Unable to get physical device surface present modes");
+		error_log("Unable to get the number physical device surface present modes");
 		return false;  
 	}
 
@@ -391,6 +391,54 @@ bool get_surface_capabilities(const vk_functions *vk, VkPhysicalDevice physical_
 {
 	VkResult result = vk->GetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, capabilities);
 	return result == VK_SUCCESS;
+}
+
+bool get_available_surface_formats(const vk_functions *vk, VkPhysicalDevice physical_device, VkSurfaceKHR surface,
+	VkSurfaceFormatKHR *formats, uint32_t *format_count) 
+{
+	*format_count = 0;
+	VkResult result = vk->GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, format_count, NULL);
+    if (result != VK_SUCCESS || *format_count == 0) {
+        error_log("Unable to get the number of supported surface formats");
+        return false;
+    }
+
+    if (*format_count > MAX_SURFACE_FORMAT_COUNT) {
+        error_log("Not enough space for surface formats");
+        return false; 
+	}
+	
+	result = vk->GetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, format_count, formats);
+	if (result != VK_SUCCESS || *format_count == 0) {
+        error_log("Unable to get the supported surface formats");
+        return false;
+	}
+
+	return true;
+}
+
+
+bool get_swapchain_image_handles(const vk_functions *vk, VkDevice device, VkSwapchainKHR swapchain,
+	VkImage *swapchain_images, uint32_t *swapchain_image_count) 
+{
+	VkResult result = vk->GetSwapchainImagesKHR(device, swapchain, swapchain_image_count, NULL);
+	if (result != VK_SUCCESS || *swapchain_image_count == 0) {
+		error_log("Unable to get the number of swapchain images");
+		return false; 
+	} 
+
+	if (*swapchain_image_count > MAX_SWAPCHAIN_IMAGE_COUNT) {
+		error_log("Not enough space for swapchain images");
+		return false; 
+	}	
+
+	result = vk->GetSwapchainImagesKHR(device, swapchain, swapchain_image_count, swapchain_images);
+	if (result != VK_SUCCESS || *swapchain_image_count == 0) {
+		error_log("Unable to get the swapchain images");
+		return false; 
+	}
+
+	return true;
 }
 
 bool present_mode_from_string(VkPresentModeKHR *dest,  const char *m) {

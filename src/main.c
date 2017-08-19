@@ -15,7 +15,7 @@ int main() {
 
 	bool success = load_basic_vulkan_functions(&vulkan_lib, &vk) 
 		&& init_store_from_config(&vk, &store, "./config/app.config")
-		&& init_vk_window(&vk, 	&window, &store) 
+		&& init_vk_window(&window, &vk, &store) 
 		&& load_presentation_queues(&vk, &store.qb, store.physical_device, window.surface.surface_handle);
 
 	if (!success) {
@@ -24,8 +24,8 @@ int main() {
 	}
 	
 	exit_program:
+	destroy_vk_window(&window, &vk, &store);	
 	destroy_vulkan_store(&vk, &store);
-	destroy_vk_window(&window);	
 	if (vulkan_lib != NULL) { 
 		FREE_LIB(vulkan_lib);
 	}

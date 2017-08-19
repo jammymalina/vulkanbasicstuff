@@ -7,7 +7,7 @@ CFLAGS = -std=c11 -Wall -g3
 
 LINKER   = gcc -o
 # linking flags here
-LFLAGS   = -flto -O3 -march=native -lm -ldl -lyaml -lSDL2
+LFLAGS   = -flto -O3 -march=native -lm -ldl -lyaml -lSDL2 -lX11 -lX11-xcb -lxcb
 
 # change these to set the proper directories where each files shoould be
 SRCDIR   = src
@@ -33,7 +33,7 @@ OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 rm       = rm -rf
 
-DEFINES := -DDEBUG_LOG -DPROD_LOG -DERROR_LOG -DVK_USE_PLATFORM_WAYLAND_KHR
+DEFINES := -DDEBUG_LOG -DPROD_LOG -DERROR_LOG -DVK_USE_PLATFORM_XCB_KHR
 
 default: $(BINDIR)/$(TARGET)
 all: default
@@ -46,7 +46,7 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
-	@export SDL_VIDEODRIVER=wayland
+	@export SDL_VIDEODRIVER=x11
 	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils $(OBJDIR)/window
 	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"

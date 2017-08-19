@@ -2,23 +2,23 @@
 
 #include "../logger/logger.h"
 
-bool init_vk_window(const vk_functions *vk, vk_window *w, const vk_store *store) {
-    w->window         = NULL; 
+bool init_vk_window(vk_window *w, const vk_functions *vk, vk_store *store) {
+    w->window = NULL; 
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        error_log("SDL could not initialize, SDL error: %s", SDL_GetError());
+        error_log("SDL unable to initialize, SDL error: %s", SDL_GetError());
         return false;
     }
 
     w->window = SDL_CreateWindow("SDL Vulkan tutorial", 
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 600, 480, SDL_WINDOW_SHOWN);
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
     if (w->window == NULL) {
-        error_log("SDL could not create window, SDL error: %s", SDL_GetError());
+        error_log("SDL unable to create window, SDL error: %s", SDL_GetError());
         return false;
     }
-    bool success = init_surface(vk, &w->surface, store, w->window);
+    bool success = init_surface_from_window(&w->surface, vk, store, w->window);
     if (!success) {
-        error_log("Couldn't create surface");
+        error_log("Unable to create surface");
         return false;
     }
 
@@ -28,7 +28,8 @@ bool init_vk_window(const vk_functions *vk, vk_window *w, const vk_store *store)
     return true;
 }
 
-void destroy_vk_window(vk_window *w) {
+void destroy_vk_window(vk_window *w, const vk_functions *vk, vk_store *store) {
+    destroy_surface(&w->surface, vk, store);
     if (w->window != NULL) {
         SDL_DestroyWindow(w->window);
         w->window = NULL;

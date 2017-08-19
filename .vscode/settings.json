@@ -5,6 +5,7 @@
         "vulkan.h": "c",
         "typeinfo": "cpp",
         "type_traits": "cpp",
-        "sdl_syswm.h": "c"
+        "sdl_syswm.h": "c",
+        "surface.h": "c"
     }
 }

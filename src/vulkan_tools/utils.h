@@ -199,6 +199,8 @@ bool is_device_supported(const vk_functions *vk,
 bool get_available_extensions(const vk_functions *vk, 
 	VkExtensionProperties *available_extensions, uint32_t *available_extensions_count); 
 
+// device
+
 bool get_available_devices(const vk_functions *vk, VkInstance instance,
 	VkPhysicalDevice *available_devices, uint32_t *available_devices_count);
 bool get_device_extensions(const vk_functions *vk, 
@@ -227,10 +229,16 @@ static inline void get_device_features_and_props(const vk_functions *vk, VkPhysi
 bool get_available_queue_props(const vk_functions *vk, VkPhysicalDevice physical_device,
 	VkQueueFamilyProperties *queue_props, uint32_t *queue_props_count);
 
+// surface
+
 bool get_available_present_modes(const vk_functions *vk, VkPhysicalDevice physical_device, 
 	VkSurfaceKHR surface, VkPresentModeKHR *present_modes, uint32_t *present_modes_count);
 bool get_surface_capabilities(const vk_functions *vk, VkPhysicalDevice physical_device, VkSurfaceKHR surface, 
 	VkSurfaceCapabilitiesKHR *capabilities);
+bool get_available_surface_formats(const vk_functions *vk, VkPhysicalDevice physical_device, VkSurfaceKHR surface,
+	VkSurfaceFormatKHR *formats, uint32_t *formats_count);
+bool get_swapchain_image_handles(const vk_functions *vk, VkDevice device, VkSwapchainKHR swapchain,
+	VkImage *swapchain_images, uint32_t *swapchain_images_count);
 bool present_mode_from_string(VkPresentModeKHR *dest, const char *m);
 
 

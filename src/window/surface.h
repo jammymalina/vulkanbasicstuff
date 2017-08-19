@@ -10,11 +10,18 @@ typedef struct {
     VkSurfaceKHR surface_handle;
     VkPresentModeKHR present_mode;
     VkSurfaceCapabilitiesKHR capabilities;
-    uint32_t swapchain_images_count;
+    VkSurfaceTransformFlagBitsKHR transform;
+    VkExtent2D image_size;
+    VkImageUsageFlags image_usage;
+    VkSurfaceFormatKHR image_format;
+    VkSwapchainKHR swapchain;
+    VkImage swapchain_images[MAX_SWAPCHAIN_IMAGE_COUNT];
+    uint32_t swapchain_image_count;
 } vk_surface;
 
-bool init_surface(const vk_functions *vk, vk_surface *surface, 
-    const vk_store *store, SDL_Window *w);
-bool destroy_surface(vk_surface *surface);
+void init_surface(vk_surface *surface);
+bool init_surface_from_window(vk_surface *surface, const vk_functions *vk, 
+    vk_store *store, SDL_Window *w);
+void destroy_surface(vk_surface *surface, const vk_functions *vk, vk_store *store);
 
 #endif // VULKAN_SURFACE_H
