@@ -8,12 +8,14 @@
 
 typedef struct {
     VkSurfaceKHR surface_handle;
+
     VkPresentModeKHR present_mode;
     VkSurfaceCapabilitiesKHR capabilities;
     VkSurfaceTransformFlagBitsKHR transform;
     VkExtent2D image_size;
     VkImageUsageFlags image_usage;
     VkSurfaceFormatKHR image_format;
+    
     VkSwapchainKHR swapchain;
     VkImage swapchain_images[MAX_SWAPCHAIN_IMAGE_COUNT];
     uint32_t swapchain_image_count;

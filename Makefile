@@ -19,12 +19,7 @@ SOURCES  += $(wildcard $(SRCDIR)/vulkan_functions/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/vulkan_tools/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/utils/*.c)
 SOURCES  += $(wildcard $(SRCDIR)/window/*.c)
-
-INCLUDES := $(wildcard $(SRCDIR)/*.h)
-INCLUDES += $(wildcard $(SRCDIR)/vulkan_functions/*.h)
-INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
-INCLUDES += $(wildcard $(SRCDIR)/vulkan_tools/*.h)
-INCLUDES += $(wildcard $(SRCDIR)/window/*.h)
+SOURCES  += $(wildcard $(SRCDIR)/command/*.c)
 
 INCLUDE_DIRS := 
 LIB_DIRS     := 
@@ -47,7 +42,7 @@ $(BINDIR)/$(TARGET): $(OBJECTS)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@export SDL_VIDEODRIVER=x11
-	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils $(OBJDIR)/window
+	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils $(OBJDIR)/window $(OBJDIR)/command
 	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 

@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "../../logger/logger.h"
 #include "../../math/basic.h"
 
 static inline bool set_swapchain_size(VkExtent2D *dest, 
@@ -15,7 +14,6 @@ static inline bool set_swapchain_size(VkExtent2D *dest,
         dest->height = clamp(height, capabilities->minImageExtent.height, capabilities->maxImageExtent.height);
         return true;
     } 
-    error_log("Unable to set desired swapchain image size, using the default");
     *dest = capabilities->currentExtent;
     return false; 
 }
@@ -24,11 +22,7 @@ static inline bool set_swapchain_scenario(VkImageUsageFlags *dest, const VkSurfa
     VkImageUsageFlags desired_usage) 
 {
     *dest = desired_usage & capabilities->supportedUsageFlags;
-    bool success = *dest == desired_usage;
-    if (!success) {
-        error_log("Unable to set desired image usage");
-    }
-    return success;
+    return *dest == desired_usage;
 }
 
 static inline bool set_swapchain_transformation(VkSurfaceTransformFlagBitsKHR *dest, 
@@ -39,7 +33,6 @@ static inline bool set_swapchain_transformation(VkSurfaceTransformFlagBitsKHR *d
         return true;
     } 
 
-    error_log("Unable to set desired image transform, using the default");
     *dest = capabilities->currentTransform;
     return false;
 } 
@@ -50,7 +43,6 @@ static inline bool set_swapchain_format(VkSurfaceFormatKHR *dest,
     VkSurfaceFormatKHR desired_surface_format) 
 {
     if (available_formats_count == 0) {
-        error_log("No available formats");
         return false;
     }
 
@@ -71,14 +63,10 @@ static inline bool set_swapchain_format(VkSurfaceFormatKHR *dest,
     for (size_t i = 0; i < available_formats_count; i++) {
         if (available_formats[i].format == desired_surface_format.format)
         {
-            error_log("The desired combination of surface format is unsupported, "
-                "selected other color space");
             *dest = desired_surface_format;
             return false;
         }
     }
-    error_log("The desired combination of surface format is unsupported, "
-        "selected the first one available");
     *dest = available_formats[0];
     return false; 
 }
