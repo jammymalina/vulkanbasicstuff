@@ -441,7 +441,34 @@ bool get_swapchain_image_handles(const vk_functions *vk, VkDevice device, VkSwap
 	return true;
 }
 
-bool present_mode_from_string(VkPresentModeKHR *dest,  const char *m) {
+bool get_swapchain_image_views(VkImageView *swapchain_image_views, uint32_t *swapchain_image_view_count,
+	const vk_functions *vk, VkDevice device, VkFormat swapchain_image_format, VkImage *swapchain_images,
+	uint32_t swapchain_image_count, VkComponentMapping component_mapping, VkImageSubresourceRange subresource_range)
+{
+	*swapchain_image_view_count = 0;
+	for (size_t i = 0; i < swapchain_image_count; i++) {
+		VkImageViewCreateInfo image_view_create_info = {
+			.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext            = NULL,
+			.flags            = 0,
+			.image            = swapchain_images[i],
+			.viewType         = VK_IMAGE_VIEW_TYPE_2D,
+			.format           = swapchain_image_format,
+			.components       = component_mapping,
+			.subresourceRange = subresource_range
+		};
+		bool success = 
+			vk->CreateImageView(device, &image_view_create_info, NULL, &swapchain_image_views[i]) == VK_SUCCESS;
+		if (!success) {
+			error_log("Unable to get the swapchain image views");
+			return false;
+		}
+		(*swapchain_image_view_count)++;
+	}
+	return true;
+}
+
+bool present_mode_from_string(VkPresentModeKHR *dest, const char *m) {
 	if (strcmp(m, "fifo") == 0) {
 		*dest = VK_PRESENT_MODE_FIFO_KHR;
 		return true;

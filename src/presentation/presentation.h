@@ -10,7 +10,7 @@
 
 struct present_info {
     VkSwapchainKHR  swapchain;
-    uint32_t        image_index;
+    uint32_t image_index;
 };
 
 static inline bool acquire_swapchain_image(uint32_t *image_index, const vk_functions *vk, VkDevice device, 
@@ -34,14 +34,14 @@ static inline bool present_image(const vk_functions *vk, VkQueue queue,
     }
 
     VkPresentInfoKHR present_info = {
-        .sType                    = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .pNext                    = NULL,
-        .waitSemaphoreCount       = rendering_sempahore_count
-        .pWaitSemaphores          = rendering_semaphores,
-        .swapchainCount           = image_count,
-        .pSwapchains              = swapchains,
-        .pImageIndices            = image_indices,
-        .pResults                 = NULL
+        .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext              = NULL,
+        .waitSemaphoreCount = rendering_sempahore_count
+        .pWaitSemaphores    = rendering_semaphores,
+        .swapchainCount     = image_count,
+        .pSwapchains        = swapchains,
+        .pImageIndices      = image_indices,
+        .pResults           = NULL
     };
 
     return vk->QueuePresentKHR(queue, &present_info) == VK_SUCCESS;

@@ -22,9 +22,6 @@ bool init_vk_window(vk_window *w, const vk_functions *vk, vk_store *store) {
         return false;
     }
 
-    //Wait two seconds
-    SDL_Delay(2000);
-
     return true;
 }
 

@@ -239,6 +239,9 @@ bool get_available_surface_formats(const vk_functions *vk, VkPhysicalDevice phys
 	VkSurfaceFormatKHR *formats, uint32_t *formats_count);
 bool get_swapchain_image_handles(const vk_functions *vk, VkDevice device, VkSwapchainKHR swapchain,
 	VkImage *swapchain_images, uint32_t *swapchain_images_count);
+bool get_swapchain_image_views(VkImageView *swapchain_image_views, uint32_t *swapchain_image_view_count,
+	const vk_functions *vk, VkDevice device, VkFormat swapchain_image_format, VkImage *swapchain_images,
+	uint32_t swapchain_image_count, VkComponentMapping component_mapping, VkImageSubresourceRange subresource_range); 
 bool present_mode_from_string(VkPresentModeKHR *dest, const char *m);
 
 

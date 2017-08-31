@@ -22,6 +22,24 @@ int main() {
 		error_log("Error during the intialization");
 		goto exit_program;
 	}
+
+	SDL_Event e;
+	bool is_finished = false;
+	while (!is_finished){
+		while (SDL_PollEvent(&e)){
+			switch (e.type) {
+				case SDL_QUIT:
+					is_finished = true;
+					break;
+				case SDL_KEYUP:
+					if (e.key.keysym.sym == SDLK_ESCAPE) {
+						is_finished = true;
+					}
+					break;
+			}
+		}
+	}
+	
 	
 	exit_program:
 	destroy_vk_window(&window, &vk, &store);	

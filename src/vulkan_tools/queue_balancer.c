@@ -6,6 +6,10 @@
 #include "utils.h"
 #include "../math/math_function.h"
 
+static bool wait_for_queue(queue_container *queue, const vk_functions *vk) {
+	return vk->QueueWaitIdle(queue->handle) == VK_SUCCESS;
+}
+
 GENERATE_BASIC_LIST_SOURCE(queue_indices, qi, uint32_t, MAX_QUEUE_COUNT)
 
 void get_device_queue(const vk_functions *vk, VkDevice device, uint32_t queue_family_index, 
@@ -88,7 +92,7 @@ bool load_queues(const vk_functions *vk, queue_balancer *qb, VkDevice device) {
 }
 
 void init_queue_container(queue_container *queue, VkQueue vk_queue, uint32_t family_index) {
-	queue->vk_queue = vk_queue; 
+	queue->handle = vk_queue; 
 	queue->family_index = family_index;
 }
 
@@ -102,5 +106,42 @@ bool load_presentation_queues(const vk_functions *vk, queue_balancer *qb, VkPhys
 		}
 	}
 	return qb->presentation_queue_indices.size > 0;
+}
+
+bool submit_command_buffers_to_queue(queue_balancer *qb, uint32_t queue_index, 
+	command_buffer *buf, const vk_functions *vk, 
+	vk_semaphore wait_semaphores[MAX_SEMAPHORE_COUNT], uint32_t wait_semaphore_count, 
+	vk_semaphore signal_semaphores[MAX_SEMAPHORE_COUNT], uint32_t signal_semaphore_count, 
+	vk_fence *fence)
+{
+	if (queue_index >= qb->queue_count) {
+		return false;
+	}
+
+    VkSemaphore wait_semaphore_handles[MAX_SEMAPHORE_COUNT];
+    VkPipelineStageFlags wait_stages[MAX_SEMAPHORE_COUNT];
+    for (size_t i = 0; i < wait_semaphore_count; i++) {
+        wait_semaphore_handles[i] = wait_semaphores[i].handle;
+        wait_stages[i] = wait_semaphores[i].waiting_stage;
+	}
+
+	VkSemaphore signal_semaphore_handles[MAX_SEMAPHORE_COUNT];
+	for (size_t i = 0; i < signal_semaphore_count; i++) {
+		signal_semaphore_handles[i] = signal_semaphores[i].handle;
+	}
+
+    VkSubmitInfo submit_info = {
+        .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext                = NULL,
+        .waitSemaphoreCount   = wait_semaphore_count,
+        .pWaitSemaphores      = wait_semaphore_handles,
+        .pWaitDstStageMask    = wait_stages,
+        .commandBufferCount   = buf->buffer_count,
+        .pCommandBuffers      = buf->buffers,
+        .signalSemaphoreCount = signal_semaphore_count,
+        .pSignalSemaphores    = signal_semaphore_handles
+	};
+	
+	return vk->QueueSubmit(qb->queues[queue_index].handle, 1, &submit_info, fence->handle) == VK_SUCCESS;
 }
 

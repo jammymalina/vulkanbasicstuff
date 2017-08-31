@@ -18,13 +18,12 @@ typedef struct {
 } vk_fence;
 
 bool init_semaphore(vk_semaphore *semaphore, const vk_functions *vk, VkDevice device);
-bool init_semaphore_waiting_stage(vk_semaphore *semaphore, const vk_functions *vk, 
-    VkDevice device, VkPipelineStageFlags waiting_stage);
+bool init_semaphore_waiting_stage(vk_semaphore *semaphore, const vk_functions *vk, VkDevice device, 
+    VkPipelineStageFlags waiting_stage);
 
 bool init_fence(vk_fence *fence, const vk_functions *vk, VkDevice device, bool signaled);
-bool wait_for_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, 
-    const vk_functions *vk, VkDevice device, VkBool32 wait_for_all, uint64_t timeout);
-bool reset_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, 
-    const vk_functions *vk, VkDevice device);
+bool wait_for_fences(const vk_fence *fences, uint32_t fence_count, const vk_functions *vk, VkDevice device, 
+    VkBool32 wait_for_all, uint64_t timeout);
+bool reset_fences(const vk_fence *fences, uint32_t fence_count, const vk_functions *vk, VkDevice device);
 
 #endif // VULKAN_SYNC_H

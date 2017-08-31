@@ -90,23 +90,43 @@ static bool init_swapchain(vk_surface *surface, const vk_functions *vk, vk_store
     VkImageUsageFlags image_usage) 
 {
     surface->swapchain_image_count = surface->capabilities.minImageCount + 1;
+
     VkSurfaceFormatKHR available_formats[MAX_SURFACE_FORMAT_COUNT];
     uint32_t available_format_count = 0;
     VkSurfaceFormatKHR desired_format = { 
         .format     = VK_FORMAT_B8G8R8A8_UNORM, 
         .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR 
     };
+
+    surface->component_mapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    surface->component_mapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    surface->component_mapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    surface->component_mapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+    surface->subresource_range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    surface->subresource_range.baseMipLevel   = 0;
+    surface->subresource_range.levelCount     = 1;
+    surface->subresource_range.baseArrayLayer = 0;
+    surface->subresource_range.layerCount     = 1;
+
     set_swapchain_size(&surface->image_size, &surface->capabilities, WINDOW_WIDTH, WINDOW_HEIGHT);
     set_swapchain_transformation(&surface->transform, &surface->capabilities, 
         VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
-    return set_swapchain_scenario(&surface->image_usage, &surface->capabilities, image_usage) &&
+    bool success = set_swapchain_scenario(&surface->image_usage, &surface->capabilities, image_usage) &&
         get_available_surface_formats(vk, store->physical_device, surface->surface_handle, 
             available_formats, &available_format_count) &&
         set_swapchain_format(&surface->image_format, vk, store->physical_device, surface->surface_handle, 
             available_formats, available_format_count, desired_format) &&
         create_swapchain(surface, vk, store) && 
         get_swapchain_image_handles(vk, store->device, surface->swapchain, surface->swapchain_images, 
-            &surface->swapchain_image_count);
+            &surface->swapchain_image_count) &&
+        get_swapchain_image_views(surface->swapchain_image_views, &surface->swapchain_image_view_count, vk, 
+            store->device, surface->image_format.format, surface->swapchain_images,
+            surface->swapchain_image_count, surface->component_mapping, surface->subresource_range);
+    if (!success) {
+        error_log("Unable to init swapchain");
+    }
+    return success;
 }
 
 static bool create_xcb_surface(const vk_functions *vk, VkSurfaceKHR *surface, 
@@ -195,9 +215,10 @@ static bool create_wayland_surface(const vk_functions *vk, VkSurfaceKHR *surface
 }
 
 void init_surface(vk_surface *surface) {
-    surface->surface_handle         = VK_NULL_HANDLE;
+    surface->surface_handle = VK_NULL_HANDLE;
     surface->swapchain_image_count = 0;
-    surface->swapchain              = VK_NULL_HANDLE;
+    surface->swapchain_image_view_count = 0;
+    surface->swapchain = VK_NULL_HANDLE;
 }
 
 bool init_surface_from_window(vk_surface *surface, const vk_functions *vk, 
@@ -228,11 +249,15 @@ bool init_surface_from_window(vk_surface *surface, const vk_functions *vk,
 }
 
 void destroy_surface(vk_surface *surface, const vk_functions *vk, vk_store *store) {
-    if(surface->swapchain != VK_NULL_HANDLE) {
+    for (size_t i = 0; i < surface->swapchain_image_view_count; i++) {
+        vk->DestroyImageView(store->device, surface->swapchain_image_views[i], NULL);
+    }
+    surface->swapchain_image_view_count = 0;
+    if (surface->swapchain != VK_NULL_HANDLE) {
         vk->DestroySwapchainKHR(store->device, surface->swapchain, NULL);
         surface->swapchain = VK_NULL_HANDLE;
     }
-    if(surface->surface_handle != VK_NULL_HANDLE) {
+    if (surface->surface_handle != VK_NULL_HANDLE) {
         vk->DestroySurfaceKHR(store->instance, surface->surface_handle, NULL);
         surface->surface_handle = VK_NULL_HANDLE;
     }

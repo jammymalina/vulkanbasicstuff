@@ -18,7 +18,11 @@ typedef struct {
     
     VkSwapchainKHR swapchain;
     VkImage swapchain_images[MAX_SWAPCHAIN_IMAGE_COUNT];
+    VkImageView swapchain_image_views[MAX_SWAPCHAIN_IMAGE_COUNT];
     uint32_t swapchain_image_count;
+    uint32_t swapchain_image_view_count; // should be equal to swapchain_image_count
+    VkComponentMapping component_mapping;
+    VkImageSubresourceRange subresource_range;
 } vk_surface;
 
 void init_surface(vk_surface *surface);

@@ -5,14 +5,14 @@ void init_command_buffer(command_buffer *buf) {
 }
 
 bool allocate_command_buffer(command_buffer *buf, const vk_functions *vk, VkDevice device, 
-    VkCommandPool pool, VkCommandBufferLevel level, uint32_t buffer_count) 
+    command_pool *pool, VkCommandBufferLevel level, uint32_t buffer_count) 
 {
     destroy_command_buffer(buf, vk, device, pool);
     buf->level = level;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = {
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .pNext              = NULL,
-        .commandPool        = pool,
+        .commandPool        = pool->handle,
         .level              = buf->level,
         .commandBufferCount = buffer_count
     };
@@ -23,9 +23,9 @@ bool allocate_command_buffer(command_buffer *buf, const vk_functions *vk, VkDevi
     return success;
 }
 
-void destroy_command_buffer(command_buffer *buf, const vk_functions *vk, VkDevice device, VkCommandPool pool) {
+void destroy_command_buffer(command_buffer *buf, const vk_functions *vk, VkDevice device, command_pool *pool) {
     if(buf->buffer_count > 0) {
-        vk->FreeCommandBuffers(device, pool, buf->buffer_count, buf->buffers);
+        vk->FreeCommandBuffers(device, pool->handle, buf->buffer_count, buf->buffers);
         buf->buffer_count = 0;
     }
 }
@@ -59,3 +59,4 @@ bool reset_command_buffer(command_buffer *buf, uint32_t buffer_index, const vk_f
     return vk->ResetCommandBuffer(buf->buffers[buffer_index], release_resources ? 
         VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT : 0) == VK_SUCCESS;
 }
+

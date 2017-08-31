@@ -7,11 +7,13 @@
 #include "../vulkan_functions/functions.h"
 #include "vk_config.h"
 #include "../collections/basic_list.h"
+#include "../command/sync.h"
+#include "../command/buffer.h"
 
 GENERATE_BASIC_LIST_HEADER(queue_indices, qi, uint32_t, MAX_QUEUE_COUNT)
 
 typedef struct {
-	VkQueue vk_queue;
+	VkQueue handle;
 	uint32_t family_index;
 } queue_container;
 
@@ -32,9 +34,15 @@ typedef struct {
 void init_empty_queue_balancer(queue_balancer *qb);
 bool create_queue_balancer(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device);
 bool load_queues(const vk_functions *vk, queue_balancer *qb, VkDevice device);
-bool load_presentation_queues(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+bool load_presentation_queues(const vk_functions *vk, queue_balancer *qb, VkPhysicalDevice physical_device, 
+	VkSurfaceKHR surface);
 
 void init_queue_container(queue_container *queue, VkQueue vk_queue, uint32_t family_index);
+bool submit_command_buffers_to_queue(queue_balancer *qb, uint32_t queue_index, 
+	command_buffer *buf, const vk_functions *vk, 
+	vk_semaphore wait_semaphores[MAX_SEMAPHORE_COUNT], uint32_t wait_semaphore_count, 
+	vk_semaphore signal_semaphores[MAX_SEMAPHORE_COUNT], uint32_t signal_semaphore_count, 
+	vk_fence *fence);
 
 #endif // QUEUE_BALANCER_H
 

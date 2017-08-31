@@ -6,8 +6,8 @@ bool init_semaphore(vk_semaphore *semaphore, const vk_functions *vk, VkDevice de
     return init_semaphore_waiting_stage(semaphore, vk, device, 0);        
 }
 
-bool init_semaphore_waiting_stage(vk_semaphore *semaphore, const vk_functions *vk, 
-    VkDevice device, VkPipelineStageFlags waiting_stage) 
+bool init_semaphore_waiting_stage(vk_semaphore *semaphore, const vk_functions *vk, VkDevice device, 
+    VkPipelineStageFlags waiting_stage) 
 {
     semaphore->handle = VK_NULL_HANDLE; 
     semaphore->waiting_stage = waiting_stage;
@@ -30,8 +30,8 @@ bool init_fence(vk_fence *fence, const vk_functions *vk, VkDevice device, bool s
     return vk->CreateFence(device, &fence_create_info, NULL, &fence->handle) == VK_SUCCESS;
 }
 
-bool wait_for_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, 
-    const vk_functions *vk, VkDevice device, VkBool32 wait_for_all, uint64_t timeout) 
+bool wait_for_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, const vk_functions *vk, 
+    VkDevice device, VkBool32 wait_for_all, uint64_t timeout) 
 {
     if (fence_count <= 0) {
         return false; 
@@ -43,9 +43,7 @@ bool wait_for_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_coun
     return vk->WaitForFences(device, fence_count, fence_handles, wait_for_all, timeout) == VK_SUCCESS;
 }
 
-bool reset_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, 
-    const vk_functions *vk, VkDevice device)
-{
+bool reset_fences(const vk_fence fences[MAX_FENCE_COUNT], uint32_t fence_count, const vk_functions *vk, VkDevice device) {
     if (fence_count <= 0) {
         return false; 
     } 

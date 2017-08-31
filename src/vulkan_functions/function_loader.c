@@ -79,7 +79,7 @@ bool load_instance_vulkan_functions(vk_functions *vk, VkInstance instance,
 
 	#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, extension)               \
 		for (size_t i = 0; i < extensions_count; i++) {                                  \
-			if (strcmp(extension, loaded_extensions[i]) == 0) {                         \
+			if (strcmp(extension, loaded_extensions[i]) == 0) {                          \
 				vk->name = (PFN_vk##name) vk->GetInstanceProcAddr(instance, "vk" #name); \
 				if (vk->name == NULL) {                                                  \
 					error_log("Could not load instance level function: vk" #name);       \
@@ -110,7 +110,7 @@ bool load_device_level_functions(vk_functions *vk, VkDevice device,
 
 	#define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, extension)                 \
 		for (size_t i = 0; i < extensions_count; i++) {                                  \
-			if (strcmp(extension, loaded_extensions[i]) == 0) {                         \
+			if (strcmp(extension, loaded_extensions[i]) == 0) {                          \
 				vk->name = (PFN_vk##name) vk->GetDeviceProcAddr(device, "vk" #name);     \
 				if (vk->name == NULL) {                                                  \
 					error_log("Could not load device level function: vk" #name);         \
