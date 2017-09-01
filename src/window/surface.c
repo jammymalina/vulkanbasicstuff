@@ -193,7 +193,7 @@ static bool create_wayland_surface(const vk_functions *vk, VkSurfaceKHR *surface
             VkResult result = vk->CreateWaylandSurfaceKHR(
                 store->instance,
                 &surface_create_info,
-                NULL, 
+                NULL,
                 surface
             );
 
