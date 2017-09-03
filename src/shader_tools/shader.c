@@ -17,9 +17,9 @@ static bool read_binary_file(uint32_t buffer[MAX_SHADER_FILE_SIZE_BYTES], size_t
     fseek(file, 0, SEEK_END);
     *buffer_size = ftell(file);
 
-    if (buffer_size > MAX_SHADER_FILE_SIZE_BYTES) {
+    if (*buffer_size > MAX_SHADER_FILE_SIZE_BYTES) {
         error_log("Not enough space to read file: %s", filename);
-        fclose(f);
+        fclose(file);
         return false;
     }
 
@@ -27,7 +27,7 @@ static bool read_binary_file(uint32_t buffer[MAX_SHADER_FILE_SIZE_BYTES], size_t
 
     fseek(file, 0, SEEK_SET);
     fread(byte_buffer, MAX_SHADER_FILE_SIZE_BYTES, 1, file);
-    fclose(f);
+    fclose(file);
 
     for (size_t i = 0; i < *buffer_size; i++) {
         buffer[i] = (uint32_t) byte_buffer[i];

@@ -21,12 +21,7 @@ SHADER_DIR = shaders
 SHADER_SRC_DIR = $(SRCDIR)/$(SHADER_DIR)
 SHADER_OBJ_DIR = $(BINDIR)/$(SHADER_DIR)
 
-SOURCES  := $(wildcard $(SRCDIR)/*.c)
-SOURCES  += $(wildcard $(SRCDIR)/vulkan_functions/*.c)
-SOURCES  += $(wildcard $(SRCDIR)/vulkan_tools/*.c)
-SOURCES  += $(wildcard $(SRCDIR)/utils/*.c)
-SOURCES  += $(wildcard $(SRCDIR)/window/*.c)
-SOURCES  += $(wildcard $(SRCDIR)/command/*.c)
+SOURCES  := $(wildcard $(SRCDIR)/*.c $(SRCDIR)/**/*.c)
 
 SHADER_SOURCES := $(wildcard $(SHADER_SRC_DIR)/basic/*.vert $(SHADER_SRC_DIR)/basic/*.frag)
 
@@ -52,8 +47,8 @@ $(BINDIR)/$(TARGET): $(OBJECTS) $(SHADER_OBJECTS)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@export SDL_VIDEODRIVER=x11
-	@mkdir -p $(OBJDIR) $(OBJDIR)/vulkan_tools $(OBJDIR)/vulkan_functions $(OBJDIR)/utils $(OBJDIR)/window $(OBJDIR)/command
-	@$(CC) $(CFLAGS)	 $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_DIRS) -c $< -o $@
 	@echo "Compiled "$<" successfully!"
 
 $(SHADER_OBJECTS): $(SHADER_OBJ_DIR)/%.svm : $(SHADER_SRC_DIR)/%
