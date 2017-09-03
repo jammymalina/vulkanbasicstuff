@@ -39,8 +39,7 @@ int main() {
 			}
 		}
 	}
-	
-	
+		
 	exit_program:
 	destroy_vk_window(&window, &vk, &store);	
 	destroy_vulkan_store(&vk, &store);
