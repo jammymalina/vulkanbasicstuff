@@ -52,7 +52,7 @@ $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@echo "Compiled "$<" successfully!"
 
 $(SHADER_OBJECTS): $(SHADER_OBJ_DIR)/%.svm : $(SHADER_SRC_DIR)/%
-	@mkdir -p $(SHADER_OBJ_DIR)/basic
+	@mkdir -p $(dir $@)
 	@$(GLSL_CC) $(GLSL_FLAGS) $< -o $@
 	@echo "Compiled "$<" successfully!"
 

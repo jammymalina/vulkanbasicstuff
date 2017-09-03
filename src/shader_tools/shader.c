@@ -44,6 +44,8 @@ void init_shader_module(vk_shader_module *shader_module) {
 bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_functions *vk,
     const char *filename, VkShaderModuleCreateFlags flags, VkDevice device) 
 {
+    init_shader_module(shader_module);
+    
     shader_module->flags = flags;
 
     uint32_t code_buffer[MAX_SHADER_FILE_SIZE_BYTES];
@@ -56,11 +58,11 @@ bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_
     }
 
     VkShaderModuleCreateInfo shader_module_create_info = {
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = NULL,
-        .flags = shader_module->flags,
+        .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .pNext    = NULL,
+        .flags    = shader_module->flags,
         .codeSize = code_size,
-        .pCode = code_buffer
+        .pCode    = code_buffer
     };
 
     return vk->CreateShaderModule(device, &shader_module_create_info, NULL, &shader_module->handle) == VK_SUCCESS;
