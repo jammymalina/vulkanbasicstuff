@@ -1,7 +1,25 @@
 #include "shader.h"
 
 #include <stdlib.h>
+#include "../utils/get_extension.h"
 #include "../logger/logger.h"
+
+static VkShaderStageFlags extension_to_shader_stage(const char *filename) {
+    const char *extension = get_filename_ext(filename);
+    if (strcmp(extension, "vert") == 0)
+        return VK_SHADER_STAGE_VERTEX_BIT;
+    if (strcmp(extension, "tesc") == 0)
+        return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    if (strcmp(extension, "tese") == 0)
+        return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    if (strcmp(extension, "geom") == 0)
+        return VK_SHADER_STAGE_GEOMETRY_BIT;
+    if (strcmp(extension, "frag") == 0)
+        return VK_SHADER_STAGE_FRAGMENT_BIT;
+    if (strcmp(extension, "comp") == 0)
+        return VK_SHADER_STAGE_COMPUTE_BIT;
+    return VK_SHADER_STAGE_ALL;        
+}
 
 static bool read_binary_file(uint32_t buffer[MAX_SHADER_FILE_SIZE_BYTES], size_t *buffer_size, const char *filename) {
     FILE *file = NULL; 
