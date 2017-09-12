@@ -5,6 +5,7 @@
 #include "vulkan_tools/utils.h"
 #include "vulkan_tools/string_utils.h"
 #include "logger/logger.h"
+#include "loaders/model/gltf.h"
 #include "window/vk_window.h"
 
 int main() {
@@ -22,6 +23,8 @@ int main() {
 		error_log("Error during the intialization");
 		goto exit_program;
 	}
+
+	load_model("resources/models/dragon/dragon.glb");
 
 	SDL_Event e;
 	bool is_finished = false;

@@ -1,6 +1,7 @@
 #include "shader.h"
 
 #include <stdlib.h>
+#include "../utils/read_binary.h"
 #include "../utils/get_extension.h"
 #include "../logger/logger.h"
 
@@ -21,39 +22,6 @@ static VkShaderStageFlags extension_to_shader_stage(const char *filename) {
     return VK_SHADER_STAGE_ALL;        
 }
 
-static bool read_binary_file(uint32_t buffer[MAX_SHADER_FILE_SIZE_BYTES], size_t *buffer_size, const char *filename) {
-    FILE *file = NULL; 
-    file = fopen(filename, "rb");
-
-    *buffer_size = 0;
-
-    if (!file) {
-        error_log("Error while opening file: %s", filename);
-        return false; 
-    }
-
-    fseek(file, 0, SEEK_END);
-    *buffer_size = ftell(file);
-
-    if (*buffer_size > MAX_SHADER_FILE_SIZE_BYTES) {
-        error_log("Not enough space to read file: %s", filename);
-        fclose(file);
-        return false;
-    }
-
-    char byte_buffer[MAX_SHADER_FILE_SIZE_BYTES];
-
-    fseek(file, 0, SEEK_SET);
-    fread(byte_buffer, MAX_SHADER_FILE_SIZE_BYTES, 1, file);
-    fclose(file);
-
-    for (size_t i = 0; i < *buffer_size; i++) {
-        buffer[i] = (uint32_t) byte_buffer[i];
-    }
-
-    return true;
-}
-
 void init_shader_module(vk_shader_module *shader_module) {
     shader_module->flags = 0;
     shader_module->handle = VK_NULL_HANDLE;
@@ -66,13 +34,18 @@ bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_
     
     shader_module->flags = flags;
 
+    unsigned char byte_buffer[MAX_SHADER_FILE_SIZE_BYTES];
     uint32_t code_buffer[MAX_SHADER_FILE_SIZE_BYTES];
     size_t code_size = 0; 
 
-    bool success = read_binary_file(code_buffer, &code_size, filename);
+    bool success = read_binary_file(byte_buffer, &code_size, MAX_SHADER_FILE_SIZE_BYTES, filename);
 
     if (!success) {
         return false;
+    }
+
+    for (size_t i = 0; i < code_size; i++) {
+        code_buffer[i] = (uint32_t) byte_buffer[i];
     }
 
     VkShaderModuleCreateInfo shader_module_create_info = {
