@@ -29,12 +29,21 @@ static bool get_gltf_chunk(gltf_chunk *chunk, byte_scanner *scanner) {
                 chunk->data = (unsigned char*) malloc(chunk->length + 1);
                 if (chunk->data != NULL) {
                     get_next_nbytes(scanner, chunk->data, chunk->length);
+                    chunk->data[chunk->length] = '\0';
                     return true;
                 }
             }
         }
     }
     return false;
+}
+
+static bool check_json_chunk(const gltf_chunk *chunk) {
+    return chunk->type == GLTF_CHUNK_TYPE_JSON;
+}
+
+static bool check_bin_chunk(const gltf_chunk *chunk) {
+    return chunk->type == GLTF_CHUNK_TYPE_BIN;
 }
 
 bool load_model(const char *filename) {
@@ -49,19 +58,22 @@ bool load_model(const char *filename) {
     }
 
     gltf_header header;
-    gltf_chunk json_chunk;
+    gltf_chunk json_chunk, bin_chunk;
 
     byte_scanner scanner;
     init_byte_scanner(&scanner, buffer, buffer_size);
 
     success &= get_gltf_header(&header, &scanner) &&
         check_gltf_header(&header) &&
-        get_gltf_chunk(&json_chunk, &scanner);
-    debug_log("%d", json_chunk.type == GLTF_CHUNK_TYPE_JSON);    
-    debug_log("%d", json_chunk.length);
-    json_chunk.data[json_chunk.length + 1] = '\0';
-    debug_log("%s", json_chunk.data);
-    free(json_chunk.data);
+        get_gltf_chunk(&json_chunk, &scanner) &&
+        check_json_chunk(&json_chunk) &&
+        get_gltf_chunk(&bin_chunk, &scanner) &&
+        check_bin_chunk(&bin_chunk);
+    
+    if (success) {
+        free(json_chunk.data);
+        free(bin_chunk.data);
+    }
 
     return true;
 }
