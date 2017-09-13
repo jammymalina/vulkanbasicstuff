@@ -69,6 +69,8 @@ bool load_model(const char *filename) {
         check_json_chunk(&json_chunk) &&
         get_gltf_chunk(&bin_chunk, &scanner) &&
         check_bin_chunk(&bin_chunk);
+
+    debug_log("json: %s", json_chunk.data);
     
     if (success) {
         free(json_chunk.data);
