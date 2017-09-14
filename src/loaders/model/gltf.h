@@ -89,9 +89,8 @@ typedef struct {
     char name[GLTF_MAX_NAME_LENGTH];
 } gltf_image;
 
-typedef {
+typedef struct {
     float base_color_factor[4];
-    
 } gltf_pbr_metallic_roughness;
 
 typedef struct {
