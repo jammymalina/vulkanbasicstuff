@@ -1,7 +1,99 @@
 #include "json.h"
 
-#include <string.h>
 #include <ctype.h>
+
+static bool add_json_node(json_tree_node *parent, json_tree_node *node) {
+    if (parent->child_array_size <= parent->child_count) {
+        size_t start_null_index = 0;
+        if (parent->child_array_size == 0) {
+            parent->child_array_size = 10;
+            parent->children = (json_tree_node**) malloc(parent->child_array_size * sizeof(json_tree_node*));
+        } else {
+            parent->child_array_size = 2 * parent->child_count;
+            parent->children = (json_tree_node**) realloc(parent->children, 
+                parent->child_array_size * sizeof(json_tree_node*));
+            start_null_index = parent->child_count;
+        }
+        if (parent->children == NULL) {
+            parent->child_array_size = 0;
+            parent->child_count = 0;
+            return false; 
+        }
+        for (size_t i = start_null_index; i < parent->child_array_size; i++) {
+            parent->children[i] = NULL;
+        }
+    }
+    parent->children[parent->child_count] = node;
+    parent->child_count++;
+    node->parent = parent;
+    return true;
+}
+
+static bool init_json_node(json_tree_node *node, json_tree_node *parent, const char *key) {
+    size_t limit = JSON_MAX_KEY_LENGTH - 1 < strlen(key) ? JSON_MAX_KEY_LENGTH - 1 : strlen(key);
+    memcpy(node->key, key, limit);
+    node->key[limit] = '\0';
+
+    node->child_count = 0;
+    node->child_array_size = 0;
+    node->children = NULL;
+    node->parent = NULL;
+    if (parent != NULL) {
+        return add_json_node(parent, node);
+    }
+    return true;
+}
+
+static json_tree_node* create_json_node(json_tree_node *parent, const char *key) {
+    json_tree_node *node = (json_tree_node*) malloc(sizeof(json_tree_node));
+    if (node == NULL) {
+        return NULL;
+    }
+    bool success = init_json_node(node, parent, key);
+    if (!success) {
+        return NULL;
+    }
+    return node;
+}
+
+static int index_of_json_node(json_tree_node *parent, json_tree_node *node) {
+    int index = parent->child_count - 1;
+    while (index >= 0 && parent->children[index] != node) {
+        index--;
+    }
+    return index;
+} 
+
+static inline bool remove_json_node(json_tree_node *parent, json_tree_node *node) {
+    int index = index_of_json_node(parent, node);
+    if (index < 0)
+        return false;
+    node->parent = NULL;
+    parent->child_count--;
+    while (index < parent->child_count) {
+        parent->children[index] = parent->children[index + 1];
+        index++;
+    }
+    if (index < parent->child_array_size)
+        parent->children[index] = NULL;
+    return true;
+}
+
+static inline void destroy_json_node(json_tree_node *node) {
+    if (node->parent != NULL) {
+        remove_json_node(node->parent, node);
+    }
+    while (node->child_count > 0) {
+        node->child_count--;
+        node->children[node->child_count]->parent = NULL;
+        destroy_json_node(node->children[node->child_count]);
+        free(node->children[node->child_count]);
+        node->children[node->child_count] = NULL;
+    }
+    free(node->children);
+    node->children = NULL;
+    free(node);
+}
 
 static bool has_nchars_ahead(const char *json, size_t index, size_t n) {
     while (json[index] != '\0' && n > 0) {
@@ -75,9 +167,50 @@ static int look_ahead(const char *json, size_t index) {
     return next_token(json, &tmp_index);
 }
 
+static void parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]) {
+    char c;
+
+    jump_whitespace(parser->json, &parser->index);
+
+    bool finished = false;
+    parser->index++; // jump over "
+    while (parser->json[parser->index] != '\0' && !finished) {
+        c = parser->json[parser->index];
+        parser->index++;        
+        if (c == '"') {
+            finished = true;
+            break;
+        } else if (c == '\\') {
+            if (parser->json[parser->index] != '\0') {
+                break;
+            }
+            parser->index++;
+        }
+    }
+}
+
+static bool parse_object(json_parser *parser) {
+    next_token(parser->json, &parser->index);
+
+    bool done = false;
+    while (!done) {
+        int token = look_ahead(parser->json, parser->index);
+        if (token == JSON_TOKEN_NONE) {
+            return false;
+        } else if (token == JSON_TOKEN_COMMA) {
+
+        }
+    }
+}
+
 void init_json_parse(json_parser *parser, char *json) {
     parser->index = 0; 
     parser->json = json;
 }
 
-
+bool parse_json(json_parser *parser, json_tree_node **root) {
+    *root = create_json_node(NULL, "/");
+    if (*root == NULL) {
+        return false;
+    }
+}

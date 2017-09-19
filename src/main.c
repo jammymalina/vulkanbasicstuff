@@ -6,6 +6,7 @@
 #include "vulkan_tools/string_utils.h"
 #include "logger/logger.h"
 #include "loaders/model/gltf.h"
+#include "parsers/json/json.h"
 #include "window/vk_window.h"
 
 int main() {
