@@ -14,8 +14,8 @@
 #define JSON_TOKEN_FALSE 10
 #define JSON_TOKEN_NULL 11
 
-#define JSON_MAX_KEY_LENGTH 512
 #define JSON_MAX_STRING_LENGTH 512
+#define JSON_UNKNOWN_CHAR ((char) 129)
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -35,13 +35,13 @@ typedef struct json_tree_node {
     struct {
         json_value_type type;
         union {
-            int i;
+            double d;
             bool b;
             char str[JSON_MAX_STRING_LENGTH];
         } data;
     } value;
 
-    char key[JSON_MAX_KEY_LENGTH];
+    char key[JSON_MAX_STRING_LENGTH];
 
     size_t child_count;
     size_t child_array_size;

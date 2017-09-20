@@ -2,6 +2,8 @@
 
 #include <ctype.h>
 
+// json node
+
 static bool add_json_node(json_tree_node *parent, json_tree_node *node) {
     if (parent->child_array_size <= parent->child_count) {
         size_t start_null_index = 0;
@@ -30,7 +32,7 @@ static bool add_json_node(json_tree_node *parent, json_tree_node *node) {
 }
 
 static bool init_json_node(json_tree_node *node, json_tree_node *parent, const char *key) {
-    size_t limit = JSON_MAX_KEY_LENGTH - 1 < strlen(key) ? JSON_MAX_KEY_LENGTH - 1 : strlen(key);
+    size_t limit = JSON_MAX_STRING_LENGTH - 1 < strlen(key) ? JSON_MAX_STRING_LENGTH - 1 : strlen(key);
     memcpy(node->key, key, limit);
     node->key[limit] = '\0';
 
@@ -93,6 +95,24 @@ static inline void destroy_json_node(json_tree_node *node) {
     free(node->children);
     node->children = NULL;
     free(node);
+}
+
+// string utils
+
+static bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
+    if (*index >= max_length) {
+        return false;
+    }
+    str[*index] = c;
+    (*index)++;
+    return true;
+}
+
+static bool parse_double(const char *str, double *val) {
+	char *temp;
+	*val = strtod(str, &temp);
+
+	return !(temp == str || *temp != '\0');
 }
 
 static bool has_nchars_ahead(const char *json, size_t index, size_t n) {
@@ -174,6 +194,9 @@ static void parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]) 
 
     bool finished = false;
     parser->index++; // jump over "
+
+    size_t str_index = 0;
+
     while (parser->json[parser->index] != '\0' && !finished) {
         c = parser->json[parser->index];
         parser->index++;        
@@ -185,8 +208,45 @@ static void parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]) 
                 break;
             }
             parser->index++;
+            if (c == '"') {
+                add_to_string(str, '"', &str_index, JSON_MAX_STRING_LENGTH - 1);                
+            } else if (c == '\\') {
+                add_to_string(str, '\\', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == '/') {
+                add_to_string(str, '/', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == 'b') {
+                add_to_string(str, '\b', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == 'f') {
+                add_to_string(str, '\f', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == 'n') {
+                add_to_string(str, '\n', &str_index, JSON_MAX_STRING_LENGTH - 1);                
+            } else if (c == 'r') {
+                add_to_string(str, '\r', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == 't') {
+                add_to_string(str, '\t', &str_index, JSON_MAX_STRING_LENGTH - 1);
+            } else if (c == 'u') {
+                if (!has_nchars_ahead(parser->json, parser->index, 4)) {
+                    break;
+                }
+                add_to_string(str, JSON_UNKNOWN_CHAR, &str_index, JSON_MAX_STRING_LENGTH - 1);
+                parser->index += 4;
+            }
+        } else {
+            add_to_string(str, c, &str_index, JSON_MAX_STRING_LENGTH - 1);
         }
     }
+    str[str_index] = '\0';
+    return finished;
+}
+
+static bool parse_number(json_parser *parser) {
+    jump_whitespace(parser->json, &parser->index);
+
+    int last_index = 0;
+    int str_length = (last_index + parser->index) + 1;
+
+    parser->index = last_index + 1;
+    return true;
 }
 
 static bool parse_object(json_parser *parser) {
