@@ -111,8 +111,26 @@ static bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
 static bool parse_double(const char *str, double *val) {
 	char *temp;
 	*val = strtod(str, &temp);
-
 	return !(temp == str || *temp != '\0');
+}
+
+static int char_index_of(const char *str, char c) {
+    for (size_t i = 0; i < strlen(str); i++) {
+        if (str[i] == c) {
+            return (int) i;
+        }
+    }
+    return -1;
+}
+
+static size_t get_last_index_of_number(const char *json, size_t index) {
+    const char *number_chars = "0123456789+-.eE";
+    size_t last_index = index;
+    for (last_index = index; json[last_index] != '\0'; last_index++) {
+        if (char_index_of(number_chars, json[last_index]) == -1)
+            break;
+    }
+    return last_index - 1;
 }
 
 static bool has_nchars_ahead(const char *json, size_t index, size_t n) {
@@ -239,11 +257,18 @@ static void parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]) 
     return finished;
 }
 
-static bool parse_number(json_parser *parser) {
+static bool parse_number(json_parser *parser, double *value) {
+    *value = 0.0;
+
     jump_whitespace(parser->json, &parser->index);
 
-    int last_index = 0;
-    int str_length = (last_index + parser->index) + 1;
+    int last_index = get_last_index_of_number(parser->json, parser->index);
+    int str_length = (last_index - parser->index) + 1;
+    char num_str[JSON_MAX_STRING_LENGTH];
+    if (str_length > JSON_MAX_STRING_LENGTH - 1) {
+        return false; 
+    }
+    for (size_t i = 0; )
 
     parser->index = last_index + 1;
     return true;
