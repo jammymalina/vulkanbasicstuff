@@ -5,7 +5,7 @@
 #include <string.h>
 
 char* vulkan_version_to_string(uint32_t version) {
-	char *version_string = (char*) malloc(256 * sizeof(char));
+	char *version_string = malloc(256 * sizeof(char));
 	uint32_t major_version = get_vulkan_version_major(version); 
 	uint32_t minor_version = get_vulkan_version_minor(version); 
 	uint32_t patch_version = get_vulkan_version_patch(version);

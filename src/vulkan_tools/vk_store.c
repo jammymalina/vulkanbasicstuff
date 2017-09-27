@@ -92,7 +92,7 @@ static bool add_extensions(const vk_functions *vk,
 	bool success = true;
 	char **ext = NULL;
 	if (store->loaded_extensions_count > 0) {
-		ext = (char**) malloc(store->loaded_extensions_count * sizeof(char*));
+		ext = malloc(store->loaded_extensions_count * sizeof(char*));
 		if (ext == NULL) {
 			error_log("Problem with the memory allocation");
 			return false; 
@@ -116,7 +116,7 @@ static bool add_extensions(const vk_functions *vk,
 			}
 			strcpy(store->loaded_extensions[i], vk_info->desired_extensions[i]);
 			size_t ext_size = strlen(store->loaded_extensions[i]) + 1;  
-			ext[i] = (char*) malloc(ext_size * sizeof(char));
+			ext[i] = malloc(ext_size * sizeof(char));
 			if (!ext[i]) {
 				error_log("Problem with memory allocation");
 				return false;
@@ -168,7 +168,7 @@ static bool add_device_extensions(const vk_functions *vk,
 	bool success = true;
 	char **ext = NULL;
 	if (store->loaded_device_extensions_count > 0) {
-		ext = (char**) malloc(store->loaded_device_extensions_count * sizeof(char*));
+		ext = malloc(store->loaded_device_extensions_count * sizeof(char*));
 		if (ext == NULL) {
 			error_log("Problem with the memory allocation");
 			return false; 
@@ -193,7 +193,7 @@ static bool add_device_extensions(const vk_functions *vk,
 			}
 			strcpy(store->loaded_device_extensions[i], vk_info->desired_device_extensions[i]);
 			size_t ext_size = strlen(store->loaded_device_extensions[i]) + 1;  
-			ext[i] = (char*) malloc(ext_size * sizeof(char));
+			ext[i] = malloc(ext_size * sizeof(char));
 			if (!ext[i]) {
 				error_log("Problem with memory allocation");
 				return false;
