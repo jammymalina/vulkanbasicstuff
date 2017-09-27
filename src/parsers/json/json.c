@@ -8,6 +8,17 @@ static bool add_json_node(json_tree_node *parent, json_tree_node *node);
 static bool init_json_node(json_tree_node *node, json_tree_node *parent, const char *key);
 static json_tree_node* create_json_node(json_tree_node *parent, const char *key);
 static int index_of_json_node(json_tree_node *parent, json_tree_node *node);
+static bool remove_json_node(json_tree_node *parent, json_tree_node *node);
+static void destroy_json_node(json_tree_node *node);
+
+// string utils 
+
+static bool add_to_string(char *str, char c, size_t *index, size_t max_length);
+static bool parse_double(const char *str, double *val);
+static int char_index_of(const char *str, char c);
+static size_t get_last_index_of_number(const char *json, size_t index);
+static bool has_nchars_ahead(const char *json, size_t index, size_t n);
+static bool has_string_ahead(const char *json, size_t index, const char *str);
 
 bool add_json_node(json_tree_node *parent, json_tree_node *node) {
     if (parent->child_array_size <= parent->child_count) {
@@ -71,7 +82,7 @@ int index_of_json_node(json_tree_node *parent, json_tree_node *node) {
     return index;
 } 
 
-static inline bool remove_json_node(json_tree_node *parent, json_tree_node *node) {
+bool remove_json_node(json_tree_node *parent, json_tree_node *node) {
     int index = index_of_json_node(parent, node);
     if (index < 0)
         return false;
@@ -86,7 +97,7 @@ static inline bool remove_json_node(json_tree_node *parent, json_tree_node *node
     return true;
 }
 
-static inline void destroy_json_node(json_tree_node *node) {
+void destroy_json_node(json_tree_node *node) {
     if (node->parent != NULL) {
         remove_json_node(node->parent, node);
     }
@@ -104,7 +115,7 @@ static inline void destroy_json_node(json_tree_node *node) {
 
 // string utils
 
-static bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
+bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
     if (*index >= max_length) {
         return false;
     }
@@ -113,13 +124,13 @@ static bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
     return true;
 }
 
-static bool parse_double(const char *str, double *val) {
+bool parse_double(const char *str, double *val) {
 	char *temp;
 	*val = strtod(str, &temp);
 	return !(temp == str || *temp != '\0');
 }
 
-static int char_index_of(const char *str, char c) {
+int char_index_of(const char *str, char c) {
     for (size_t i = 0; str[i] != '\0'; i++) {
         if (str[i] == c) {
             return (int) i;
@@ -128,7 +139,7 @@ static int char_index_of(const char *str, char c) {
     return -1;
 }
 
-static size_t get_last_index_of_number(const char *json, size_t index) {
+size_t get_last_index_of_number(const char *json, size_t index) {
     const char *number_chars = "0123456789+-.eE";
     size_t last_index = index;
     for (last_index = index; json[last_index] != '\0'; last_index++) {
@@ -138,7 +149,7 @@ static size_t get_last_index_of_number(const char *json, size_t index) {
     return last_index - 1;
 }
 
-static bool has_nchars_ahead(const char *json, size_t index, size_t n) {
+bool has_nchars_ahead(const char *json, size_t index, size_t n) {
     while (json[index] != '\0' && n > 0) {
         n--;
         index++;
@@ -146,7 +157,7 @@ static bool has_nchars_ahead(const char *json, size_t index, size_t n) {
     return n == 0;
 }
 
-static bool has_string_ahead(const char *json, size_t index, const char *str) {
+bool has_string_ahead(const char *json, size_t index, const char *str) {
     while (json[index] != '\0' && str[index] != '\0' && json[index] == str[index]) {
         index++;
     }
