@@ -1,6 +1,16 @@
 #include "json.h"
 
 #include <ctype.h>
+#include <string.h>
+
+// parser struct 
+
+typedef struct {
+    char *json;
+    size_t index;
+} json_parser;
+
+static bool init_json_parse(json_parser *parser, const char *json);
 
 // json node
 
@@ -10,7 +20,6 @@ static bool init_json_node(json_tree_node *node, json_tree_node *parent, const c
 static json_tree_node* create_json_node(json_tree_node *parent, const char *key, json_value_type value_type);
 static int index_of_json_node(json_tree_node *parent, json_tree_node *node);
 static bool remove_json_node(json_tree_node *parent, json_tree_node *node);
-static void destroy_json_node(json_tree_node *node);
 
 // string utils 
 
@@ -30,7 +39,23 @@ static int next_token(const char *json, size_t *index);
 static bool parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]);
 static bool parse_number(json_parser *parser, double *value);
 static bool parse_object(json_parser *parser, json_tree_node *parent);
-static bool parse_value(json_parser *parser, json_tree_node *parent);
+static bool parse_value(json_parser *parser, json_tree_node **node, const char *key);
+
+bool init_json_node(json_tree_node *node, json_tree_node *parent, const char *key, json_value_type value_type) {
+    size_t limit = JSON_MAX_STRING_LENGTH - 1 < strlen(key) ? JSON_MAX_STRING_LENGTH - 1 : strlen(key);
+    memcpy(node->key, key, limit);
+    node->key[limit] = '\0';
+    node->value.type = value_type;
+
+    node->child_count = 0;
+    node->child_array_size = 0;
+    node->children = NULL;
+    node->parent = NULL;
+    if (parent != NULL) {
+        return add_json_node(parent, node);
+    }
+    return true;
+}
 
 bool add_json_node(json_tree_node *parent, json_tree_node *node) {
     if (parent->child_array_size <= parent->child_count) {
@@ -56,22 +81,6 @@ bool add_json_node(json_tree_node *parent, json_tree_node *node) {
     parent->children[parent->child_count] = node;
     parent->child_count++;
     node->parent = parent;
-    return true;
-}
-
-bool init_json_node(json_tree_node *node, json_tree_node *parent, const char *key, json_value_type value_type) {
-    size_t limit = JSON_MAX_STRING_LENGTH - 1 < strlen(key) ? JSON_MAX_STRING_LENGTH - 1 : strlen(key);
-    memcpy(node->key, key, limit);
-    node->key[limit] = '\0';
-    node->value.type = value_type;
-
-    node->child_count = 0;
-    node->child_array_size = 0;
-    node->children = NULL;
-    node->parent = NULL;
-    if (parent != NULL) {
-        return add_json_node(parent, node);
-    }
     return true;
 }
 
@@ -308,7 +317,7 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
 
     bool done = false;
     bool success = true;
-    char str[JSON_MAX_STRING_LENGTH];
+    char key[JSON_MAX_STRING_LENGTH];
 
     json_tree_node *node;
     
@@ -325,21 +334,17 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
                 return true;
             default:
                 // name
-                success = parse_string(parser, str);
+                success = parse_string(parser, key);
                 if (!success) {
                     return false;
                 }
-                
-                node->value.type = JSON_VALUE_OBJECT;
-
                 // :
                 next_token(parser->json, &parser->index);
                 if (token != JSON_TOKEN_COLON) {
                     return false;
                 }
-                
                 // value
-                success = parse_value(parser, node);
+                success = parse_value(parser, &node, key) && add_json_node(parent, node);
                 if (!success) {
                     return false;
                 }
@@ -350,40 +355,80 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
     return true;
 }
 
-bool parse_value(json_parser *parser, json_tree_node *parent) {
-    switch (look_ahead(parser->json, parser->index)) {
+bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
+    double num;
+    char str[JSON_MAX_STRING_LENGTH];
+    bool b;
+    bool success;
+    int token = look_ahead(parser->json, parser->index);
+    switch (token) {
         case JSON_TOKEN_STRING:
-            return ParseString(json, ref index, ref success);
-        case JSON_TOKEN_NUMBER:
-            return ParseNumber(json, ref index, ref success);
-        case JSON_TOKEN_CURLY_OPEN:
-            return ParseObject(json, ref index, ref success);
-        case JSON_TOKEN_SQUARED_OPEN:
-            return ParseArray(json, ref index, ref success);
-        case JSON_TOKEN_TRUE:
-            NextToken(json, ref index);
+            success = parse_string(parser, str);
+            if (!success) {
+                return false;
+            }
+            *node = create_json_node(NULL, key, JSON_VALUE_STRING);
+            if (*node == NULL) {
+                return false;
+            }             
+            strcpy((*node)->value.data.str, str);
             return true;
+        case JSON_TOKEN_NUMBER:
+            success = parse_number(parser, &num);
+            if (!success) {
+                return false;
+            }
+            *node = create_json_node(NULL, key, JSON_VALUE_NUMBER);
+            if (*node == NULL) {
+                return false;
+            }       
+            (*node)->value.data.num = num;
+            return true;
+        case JSON_TOKEN_CURLY_OPEN:
+            *node = create_json_node(NULL, key, JSON_VALUE_OBJECT);        
+            return parse_object(parser, *node);
+        case JSON_TOKEN_SQUARED_OPEN:
+            return true;
+        case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
-            NextToken(json, ref index);
-            return false;
+            *node = create_json_node(NULL, key, JSON_VALUE_BOOLEAN);
+            if (*node == NULL) {
+                return false;
+            }       
+            (*node)->value.data.b = token == JSON_TOKEN_TRUE;
+            next_token(parser->json, &parser->index);
+            return true;
         case JSON_TOKEN_NULL:
-            NextToken(json, ref index);
-            return null;
+            *node = create_json_node(NULL, key, JSON_VALUE_NULL);
+            if (*node == NULL) {
+                return false;
+            }       
+            next_token(parser->json, &parser->index);
+            return true;
         case JSON_TOKEN_NONE:
             break;
+    }
+    return false;
 }
 
-void init_json_parse(json_parser *parser, char *json) {
+ bool init_json_parse(json_parser *parser, const char *json) {
     parser->index = 0; 
-    parser->json = json;
-}
-
-bool parse_json(char *json, json_tree_node **root) {
-    json_parser parser;
-    init_json_parse(&parser, json);
-    *root = create_json_node(NULL, "/", JSON_VALUE_OBJECT);
-    if (*root == NULL) {
+    
+    size_t len = strlen(json);
+    parser->json = malloc(len + 1);
+    if (parser->json == NULL) {
         return false;
     }
-    return parse_value(&parser, *root);
+    strcpy(parser->json, json);
+    return true;
+}
+
+bool parse_json(const char *json, json_tree_node **root) {
+    json_parser parser;
+    bool success = init_json_parse(&parser, json) && parse_value(&parser, root, "/");
+    if (parser.json != NULL) {
+        free(parser.json);
+        parser.json = NULL;
+    }
+    return success;
 }

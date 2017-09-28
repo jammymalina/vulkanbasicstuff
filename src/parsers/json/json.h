@@ -28,14 +28,15 @@ typedef enum {
     JSON_VALUE_OBJECT,
     JSON_VALUE_STRING,
     JSON_VALUE_NULL,
-    JSON_VALUE_BOOLEAN
+    JSON_VALUE_BOOLEAN,
+    JSON_VALUE_NONE
 } json_value_type;
 
 typedef struct json_tree_node {
     struct {
         json_value_type type;
         union {
-            double d;
+            double num;
             bool b;
             char str[JSON_MAX_STRING_LENGTH];
         } data;
@@ -49,12 +50,8 @@ typedef struct json_tree_node {
     struct json_tree_node **children;
 } json_tree_node;
 
-typedef struct {
-    char *json;
-    size_t index;
-} json_parser;
+bool parse_json(const char *json, json_tree_node **root);
 
-void init_json_parse(json_parser *parser, char *json);
-bool parse_json(json_parser *parser, json_tree_node **root);
+void destroy_json_node(json_tree_node *node);
 
 #endif // JSON_PARSER_H
