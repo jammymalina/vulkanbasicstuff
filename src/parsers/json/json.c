@@ -26,6 +26,7 @@ static bool remove_json_node(json_tree_node *parent, json_tree_node *node);
 static bool parse_double(const char *str, double *val);
 static bool add_to_string(char *str, char c, size_t *index, size_t max_length);
 static int char_index_of(const char *str, char c);
+static bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]);
 
 // parser utils
 
@@ -38,6 +39,7 @@ static int next_token(const char *json, size_t *index);
 
 static bool parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]);
 static bool parse_number(json_parser *parser, double *value);
+static bool parse_array(json_parser *parser, json_tree_node *parent);
 static bool parse_object(json_parser *parser, json_tree_node *parent);
 static bool parse_value(json_parser *parser, json_tree_node **node, const char *key);
 
@@ -160,6 +162,21 @@ int char_index_of(const char *str, char c) {
     }
     return -1;
 }
+
+bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]) {
+    char *p = b;
+    size_t i = num;
+    size_t char_count = 0;
+    do {
+        char c = (i % 10) + '0';
+        i /= 10; 
+        str[char_count] = c;
+        char_count++;
+    } while(i > 0 && char_count < JSON_MAX_STRING_LENGTH - 1);
+    str[char_count] = '\0';
+    return i == 0;
+}
+
 
 size_t get_last_index_of_number(const char *json, size_t index) {
     const char *number_chars = "0123456789+-.eE";
@@ -355,6 +372,42 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
     return true;
 }
 
+bool parse_array(json_parser *parser, json_tree_node *parent) {
+    next_token(parser->json, &parser->index);
+
+    size_t i = 0;
+    char key[JSON_MAX_STRING_LENGTH];
+    bool success = value;
+    
+    json_tree_node *node;
+    bool finished = false; 
+
+    while (!finished) {
+        int token = look_ahead(parser->json, parser->index);
+        switch (token) {
+            case JSON_TOKEN_NONE:
+                return false;
+            case JSON_TOKEN_COMMA:
+                next_token(parser->json, &parser->index);
+                break;
+            case JSON_TOKEN_SQUARED_CLOSE:
+                finished = true;
+                break;
+            default:
+                success = size_to_str(i, key) &&
+                    parse_value(parser, &node, key) &&
+                    add_json_node(parent, node);
+                if (!success) {
+                    return false;
+                }
+                i++;
+                break;
+        }
+    }   
+
+    return true;
+}
+
 bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
     double num;
     char str[JSON_MAX_STRING_LENGTH];
@@ -385,10 +438,17 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
             (*node)->value.data.num = num;
             return true;
         case JSON_TOKEN_CURLY_OPEN:
-            *node = create_json_node(NULL, key, JSON_VALUE_OBJECT);        
+            *node = create_json_node(NULL, key, JSON_VALUE_OBJECT);  
+            if (*node == NULL) {
+                return false;
+            }            
             return parse_object(parser, *node);
         case JSON_TOKEN_SQUARED_OPEN:
-            return true;
+            *node = create_json_node(NULL, key, JSON_VALUE_ARRAY); 
+            if (*node == NULL) {
+                return false;
+            }             
+            return parse_array(parser, node);
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
             *node = create_json_node(NULL, key, JSON_VALUE_BOOLEAN);
