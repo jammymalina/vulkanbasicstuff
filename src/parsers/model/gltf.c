@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "../../parsers/json/json.h"
+#include "../json/json.h"
 #include "../../utils/read_binary.h"
 #include "../../logger/logger.h"
 
@@ -73,7 +73,10 @@ bool load_model(const char *filename) {
 
     debug_log("json: %s", json_chunk.data);
     json_tree_node *root;
-    success = parse_json(json_chunk.data, &root);
+    success = parse_json((const char*) json_chunk.data, &root);
+    debug_log("Success: %d", success);
+    debug_log("Child count: %d", root->child_count);
+    debug_log("Child array size: %d", root->child_array_size);        
     
     if (success) {
         free(json_chunk.data);

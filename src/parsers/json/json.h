@@ -17,6 +17,8 @@
 #define JSON_MAX_STRING_LENGTH 512
 #define JSON_UNKNOWN_CHAR ((char) 129)
 
+#define JSON_POINTER_PRINT_MAX_LENGTH 1024
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -51,6 +53,7 @@ typedef struct json_tree_node {
 } json_tree_node;
 
 bool parse_json(const char *json, json_tree_node **root);
+void print_all_json_pointers(json_tree_node *node);
 
 void destroy_json_node(json_tree_node *node);
 

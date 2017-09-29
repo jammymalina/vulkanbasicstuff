@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 // parser struct 
 
@@ -24,7 +25,8 @@ static bool remove_json_node(json_tree_node *parent, json_tree_node *node);
 // string utils 
 
 static bool parse_double(const char *str, double *val);
-static bool add_to_string(char *str, char c, size_t *index, size_t max_length);
+static bool add_char_to_str(char *str, char c, size_t *index, size_t max_length);
+static bool add_str_to_str(char *dest, const char *src, size_t *index, size_t max_length);
 static int char_index_of(const char *str, char c);
 static bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]);
 
@@ -139,12 +141,16 @@ void destroy_json_node(json_tree_node *node) {
 
 // string utils
 
-bool add_to_string(char *str, char c, size_t *index, size_t max_length) {
+bool add_char_to_str(char *str, char c, size_t *index, size_t max_length) {
     if (*index >= max_length) {
         return false;
     }
     str[*index] = c;
     (*index)++;
+    return true;
+}
+
+bool add_str_to_str(char *dest, const char *src, size_t *index, size_t max_length) {
     return true;
 }
 
@@ -164,7 +170,6 @@ int char_index_of(const char *str, char c) {
 }
 
 bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]) {
-    char *p = b;
     size_t i = num;
     size_t char_count = 0;
     do {
@@ -282,30 +287,30 @@ bool parse_string(json_parser *parser, char str[JSON_MAX_STRING_LENGTH]) {
             }
             parser->index++;
             if (c == '"') {
-                add_to_string(str, '"', &str_index, JSON_MAX_STRING_LENGTH - 1);                
+                add_char_to_str(str, '"', &str_index, JSON_MAX_STRING_LENGTH - 1);                
             } else if (c == '\\') {
-                add_to_string(str, '\\', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '\\', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == '/') {
-                add_to_string(str, '/', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '/', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == 'b') {
-                add_to_string(str, '\b', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '\b', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == 'f') {
-                add_to_string(str, '\f', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '\f', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == 'n') {
-                add_to_string(str, '\n', &str_index, JSON_MAX_STRING_LENGTH - 1);                
+                add_char_to_str(str, '\n', &str_index, JSON_MAX_STRING_LENGTH - 1);                
             } else if (c == 'r') {
-                add_to_string(str, '\r', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '\r', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == 't') {
-                add_to_string(str, '\t', &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, '\t', &str_index, JSON_MAX_STRING_LENGTH - 1);
             } else if (c == 'u') {
                 if (!has_nchars_ahead(parser->json, parser->index, 4)) {
                     break;
                 }
-                add_to_string(str, JSON_UNKNOWN_CHAR, &str_index, JSON_MAX_STRING_LENGTH - 1);
+                add_char_to_str(str, JSON_UNKNOWN_CHAR, &str_index, JSON_MAX_STRING_LENGTH - 1);
                 parser->index += 4;
             }
         } else {
-            add_to_string(str, c, &str_index, JSON_MAX_STRING_LENGTH - 1);
+            add_char_to_str(str, c, &str_index, JSON_MAX_STRING_LENGTH - 1);
         }
     }
     str[str_index] = '\0';
@@ -343,7 +348,7 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
         switch (token) {
             case JSON_TOKEN_NONE: 
                 return false;
-            case JSON_TOKEN_COMMA: 
+            case JSON_TOKEN_COMMA:
                 next_token(parser->json, &parser->index);
                 break;
             case JSON_TOKEN_CURLY_CLOSE:
@@ -356,7 +361,7 @@ bool parse_object(json_parser *parser, json_tree_node *parent) {
                     return false;
                 }
                 // :
-                next_token(parser->json, &parser->index);
+                token = next_token(parser->json, &parser->index);
                 if (token != JSON_TOKEN_COLON) {
                     return false;
                 }
@@ -377,7 +382,7 @@ bool parse_array(json_parser *parser, json_tree_node *parent) {
 
     size_t i = 0;
     char key[JSON_MAX_STRING_LENGTH];
-    bool success = value;
+    bool success = false;
     
     json_tree_node *node;
     bool finished = false; 
@@ -391,6 +396,7 @@ bool parse_array(json_parser *parser, json_tree_node *parent) {
                 next_token(parser->json, &parser->index);
                 break;
             case JSON_TOKEN_SQUARED_CLOSE:
+                next_token(parser->json, &parser->index);
                 finished = true;
                 break;
             default:
@@ -411,7 +417,6 @@ bool parse_array(json_parser *parser, json_tree_node *parent) {
 bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
     double num;
     char str[JSON_MAX_STRING_LENGTH];
-    bool b;
     bool success;
     int token = look_ahead(parser->json, parser->index);
     switch (token) {
@@ -448,7 +453,7 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
             if (*node == NULL) {
                 return false;
             }             
-            return parse_array(parser, node);
+            return parse_array(parser, *node);
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
             *node = create_json_node(NULL, key, JSON_VALUE_BOOLEAN);
@@ -481,6 +486,10 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
     }
     strcpy(parser->json, json);
     return true;
+}
+
+void print_all_json_pointers(json_tree_node *node) {
+    char p[JSON_POINTER_PRINT_MAX_LENGTH];
 }
 
 bool parse_json(const char *json, json_tree_node **root) {
