@@ -26,9 +26,16 @@ static bool remove_json_node(json_tree_node *parent, json_tree_node *node);
 
 static bool parse_double(const char *str, double *val);
 static bool add_char_to_str(char *str, char c, size_t *index, size_t max_length);
-static bool add_str_to_str(char *dest, const char *src, size_t *index, size_t max_length);
 static int char_index_of(const char *str, char c);
 static bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]);
+
+// pointer utils
+
+static const char* json_value_type_to_string(json_value_type type);
+static bool append_json_pointer(char dest[JSON_POINTER_PRINT_MAX_LENGTH], const char *key);
+static void pop_json_pointer(char dest[JSON_POINTER_PRINT_MAX_LENGTH]);
+static void print_all_json_pointers_r(const json_tree_node *node, char str[JSON_POINTER_PRINT_MAX_LENGTH]);
+static const json_tree_node* get_json_node_r(const json_tree_node *node, const char *json_pointer);
 
 // parser utils
 
@@ -150,10 +157,6 @@ bool add_char_to_str(char *str, char c, size_t *index, size_t max_length) {
     return true;
 }
 
-bool add_str_to_str(char *dest, const char *src, size_t *index, size_t max_length) {
-    return true;
-}
-
 bool parse_double(const char *str, double *val) {
 	char *temp;
 	*val = strtod(str, &temp);
@@ -181,6 +184,55 @@ bool size_to_str(size_t num, char str[JSON_MAX_STRING_LENGTH]) {
     str[char_count] = '\0';
     return i == 0;
 }
+
+// pointer utils
+
+bool append_json_pointer(char dest[JSON_POINTER_PRINT_MAX_LENGTH], const char *key) {
+    size_t pointer_index = strlen(dest);
+    size_t i;
+    for (i = 0; i < strlen(key) && pointer_index < JSON_POINTER_PRINT_MAX_LENGTH - 1; i++, pointer_index++) {
+        dest[pointer_index] = key[i];
+    }
+    dest[pointer_index] = '\0';
+    return i == strlen(key);
+}
+
+void pop_json_pointer(char dest[JSON_POINTER_PRINT_MAX_LENGTH]) {
+    size_t i = strlen(dest) - 1;
+    while (dest[i] != '/') {
+        dest[i] = '\0';
+        if (i == 0) {
+            break;
+        }
+        i--;
+    }
+    if (i > 0) {
+        dest[i] = '\0';
+    }
+}
+
+const char* json_value_type_to_string(json_value_type type) {
+    switch (type) {
+        case JSON_VALUE_NULL:
+            return "null";
+        case JSON_VALUE_NUMBER:
+            return "number";
+        case JSON_VALUE_ARRAY:
+            return "array";
+        case JSON_VALUE_OBJECT:
+            return "object";
+        case JSON_VALUE_BOOLEAN:
+            return "boolean";
+        case JSON_VALUE_STRING:
+            return "string";
+        case JSON_VALUE_NONE:
+            return "none";
+        default:
+            return "none";
+    }
+}
+
+// parser utils
 
 
 size_t get_last_index_of_number(const char *json, size_t index) {
@@ -419,16 +471,17 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
     char str[JSON_MAX_STRING_LENGTH];
     bool success;
     int token = look_ahead(parser->json, parser->index);
+    *node = create_json_node(NULL, key, JSON_VALUE_NONE);
+    if (*node == NULL) {
+        return false;
+    }         
     switch (token) {
         case JSON_TOKEN_STRING:
             success = parse_string(parser, str);
             if (!success) {
                 return false;
             }
-            *node = create_json_node(NULL, key, JSON_VALUE_STRING);
-            if (*node == NULL) {
-                return false;
-            }             
+            (*node)->value.type = JSON_VALUE_STRING;
             strcpy((*node)->value.data.str, str);
             return true;
         case JSON_TOKEN_NUMBER:
@@ -436,38 +489,23 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
             if (!success) {
                 return false;
             }
-            *node = create_json_node(NULL, key, JSON_VALUE_NUMBER);
-            if (*node == NULL) {
-                return false;
-            }       
+            (*node)->value.type = JSON_VALUE_NUMBER;            
             (*node)->value.data.num = num;
             return true;
         case JSON_TOKEN_CURLY_OPEN:
-            *node = create_json_node(NULL, key, JSON_VALUE_OBJECT);  
-            if (*node == NULL) {
-                return false;
-            }            
+            (*node)->value.type = JSON_VALUE_OBJECT;    
             return parse_object(parser, *node);
         case JSON_TOKEN_SQUARED_OPEN:
-            *node = create_json_node(NULL, key, JSON_VALUE_ARRAY); 
-            if (*node == NULL) {
-                return false;
-            }             
+            (*node)->value.type = JSON_VALUE_ARRAY;
             return parse_array(parser, *node);
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
-            *node = create_json_node(NULL, key, JSON_VALUE_BOOLEAN);
-            if (*node == NULL) {
-                return false;
-            }       
+            (*node)->value.type = JSON_VALUE_BOOLEAN;    
             (*node)->value.data.b = token == JSON_TOKEN_TRUE;
             next_token(parser->json, &parser->index);
             return true;
         case JSON_TOKEN_NULL:
-            *node = create_json_node(NULL, key, JSON_VALUE_NULL);
-            if (*node == NULL) {
-                return false;
-            }       
+            (*node)->value.type = JSON_VALUE_NULL;    
             next_token(parser->json, &parser->index);
             return true;
         case JSON_TOKEN_NONE:
@@ -488,8 +526,65 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
     return true;
 }
 
-void print_all_json_pointers(json_tree_node *node) {
+const json_tree_node* get_json_node_r(const json_tree_node *node, const char *json_pointer) {
+    char key[JSON_MAX_STRING_LENGTH];
+    const char *p = json_pointer;
+    p++;
+    size_t i = 0;
+    while (i < JSON_MAX_STRING_LENGTH - 1 && *p != '/' && *p != '\0') {
+        key[i] = *p;
+        i++;
+        p++;
+    }
+    key[i] = '\0';
+    if (*p != '/' && *p != '\0') {
+        return NULL;
+    }
+    for (size_t j = 0; j < node->child_count; j++) {
+        if (strcmp(node->children[j]->key, key) == 0) {
+            return *p == '\0' ? node->children[j] : get_json_node_r(node->children[j], p);
+        }
+    }
+    return NULL;
+}
+
+const json_tree_node* get_json_node(const json_tree_node *root, const char *json_pointer) {
+    if (strcmp(json_pointer, "/") == 0) {
+        return root;
+    }
+    return get_json_node_r(root, json_pointer);
+}
+
+void print_all_json_pointers_r(const json_tree_node *node, char str[JSON_POINTER_PRINT_MAX_LENGTH]) {
+    append_json_pointer(str, node->key);
+    printf("%s: %s", str, json_value_type_to_string(node->value.type));
+    switch (node->value.type) {
+        case JSON_VALUE_NUMBER:
+            printf(", %.2f", node->value.data.num);
+            break;
+        case JSON_VALUE_STRING:
+            printf(", %s", node->value.data.str);
+            break;
+        case JSON_VALUE_BOOLEAN:
+            printf(", %s", node->value.data.b ? "true" : "false");
+            break;
+        default:
+            break;
+    }
+    printf("\n");    
+    for (size_t i = 0; i < node->child_count; i++) {
+        if (strcmp(str, "/") != 0) {
+            append_json_pointer(str, "/");
+        }
+        print_all_json_pointers_r(node->children[i], str);
+        pop_json_pointer(str);
+    }
+}
+
+void print_all_json_pointers(const json_tree_node *node) {
     char p[JSON_POINTER_PRINT_MAX_LENGTH];
+    p[0] = '\0';
+    print_all_json_pointers_r(node, p);
 }
 
 bool parse_json(const char *json, json_tree_node **root) {
@@ -500,4 +595,26 @@ bool parse_json(const char *json, json_tree_node **root) {
         parser.json = NULL;
     }
     return success;
+}
+
+// validations
+bool is_json_node_of_type(const json_tree_node *root, const char *json_pointer, json_value_type type) {
+    const json_tree_node *node = get_json_node(root, json_pointer);
+    if (node == NULL) {
+        return false;
+    }
+    return node->value.type == type;
+}
+
+bool is_json_node_array_of_type(const json_tree_node *root, const char *json_pointer, json_value_type type) {
+    const json_tree_node *node = get_json_node(root, json_pointer);
+    if (node == NULL || node->value.type != JSON_VALUE_ARRAY) {
+        return false;
+    }
+    for (size_t i = 0; i < node->child_count; i++) {
+        if (node->children[i]->value.type != type) {
+            return false;
+        }
+    }
+    return true;
 }

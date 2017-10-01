@@ -53,7 +53,12 @@ typedef struct json_tree_node {
 } json_tree_node;
 
 bool parse_json(const char *json, json_tree_node **root);
-void print_all_json_pointers(json_tree_node *node);
+void print_all_json_pointers(const json_tree_node *node);
+const json_tree_node* get_json_node(const json_tree_node *root, const char *json_pointer);
+
+// validations
+bool is_json_node_of_type(const json_tree_node *root, const char *json_pointer, json_value_type type);
+bool is_json_node_array_of_type(const json_tree_node *root, const char *json_pointer, json_value_type type);
 
 void destroy_json_node(json_tree_node *node);
 

@@ -74,9 +74,12 @@ bool load_model(const char *filename) {
     debug_log("json: %s", json_chunk.data);
     json_tree_node *root;
     success = parse_json((const char*) json_chunk.data, &root);
-    debug_log("Success: %d", success);
-    debug_log("Child count: %d", root->child_count);
-    debug_log("Child array size: %d", root->child_array_size);        
+    if (!success) {
+        error_log("Error while reading model data: %s", filename);
+        return false;
+    }
+    print_all_json_pointers(get_json_node(root, "/bufferViews/2"));
+
     
     if (success) {
         free(json_chunk.data);
