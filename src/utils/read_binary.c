@@ -2,6 +2,21 @@
 
 #include <string.h>
 
+size_t get_file_size(FILE *file) {
+    if (!file) {
+        return 0; 
+    }
+
+    size_t buffer_size = 0;    
+    size_t current_pos = ftell(file);
+
+    fseek(file, 0, SEEK_END);
+    buffer_size = ftell(file);
+    fseek(file, 0, current_pos);
+
+    return buffer_size;
+}
+
 bool read_binary_file(unsigned char *buffer, size_t *buffer_size, size_t max_buffer_size, const char *filename) {
     FILE *file = NULL; 
     file = fopen(filename, "rb");
@@ -13,8 +28,7 @@ bool read_binary_file(unsigned char *buffer, size_t *buffer_size, size_t max_buf
         return false; 
     }
 
-    fseek(file, 0, SEEK_END);
-    *buffer_size = ftell(file);
+    *buffer_size = get_file_size(file);
 
     if (*buffer_size > max_buffer_size) {
         error_log("Not enough space to read file: %s", filename);

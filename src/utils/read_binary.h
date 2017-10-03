@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "../logger/logger.h"
 
+size_t get_file_size(FILE *file);
 bool read_binary_file(unsigned char *buffer, size_t *buffer_size, size_t max_buffer_size, const char *filename);
 
 typedef struct {
