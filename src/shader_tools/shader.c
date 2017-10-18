@@ -64,3 +64,10 @@ void destroy_shader_module(vk_shader_module *shader_module, const vk_functions *
         vk->DestroyShaderModule(device, shader_module->handle, NULL);        
     }
 }
+
+bool init_shader_stage_info(VkPipelineShaderStageCreateInfo *shader_stage, const vk_functions *vk, const char *filename) {
+    shader_stage->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo->stage = extension_to_shader_stage(filename);
+        
+    return true;
+}
