@@ -18,7 +18,7 @@ static inline bool acquire_swapchain_image(uint32_t *image_index, const vk_funct
 {
     VkResult result = vk->AcquireNextImageKHR(device, swapchain, ACQUIRE_SWAPCHAIN_IMAGE_TIMEOUT_NS, 
         semaphore, fence, image_index);}
-    return result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR;
+    return result == VK_SUCCESS; // || result == VK_SUBOPTIMAL_KHR;
 }
 
 static inline bool present_image(const vk_functions *vk, VkQueue queue, 

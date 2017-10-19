@@ -1,11 +1,12 @@
 #include "shader.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include "../utils/read_binary.h"
 #include "../utils/get_extension.h"
 #include "../logger/logger.h"
 
-static VkShaderStageFlags extension_to_shader_stage(const char *filename) {
+static VkShaderStageFlagBits extension_to_shader_stage(const char *filename) {
     const char *extension = get_filename_ext(filename);
     if (strcmp(extension, "vert") == 0)
         return VK_SHADER_STAGE_VERTEX_BIT;
@@ -25,6 +26,8 @@ static VkShaderStageFlags extension_to_shader_stage(const char *filename) {
 void init_shader_module(vk_shader_module *shader_module) {
     shader_module->flags = 0;
     shader_module->handle = VK_NULL_HANDLE;
+    shader_module->stage = VK_SHADER_STAGE_ALL;
+    strcpy(shader_module->name, "");
 }
 
 bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_functions *vk,
@@ -38,7 +41,13 @@ bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_
     uint32_t code_buffer[MAX_SHADER_FILE_SIZE_BYTES];
     size_t code_size = 0; 
 
-    bool success = read_binary_file(byte_buffer, &code_size, MAX_SHADER_FILE_SIZE_BYTES, filename);
+    char *filename_svm = malloc(strlen(filename) + 5);
+    if (filename_svm == NULL) {
+        return false;
+    }
+    strcpy(filename_svm, filename);
+    strcat(filename_svm, ".svm");
+    bool success = read_binary_file(byte_buffer, &code_size, MAX_SHADER_FILE_SIZE_BYTES, filename_svm);
 
     if (!success) {
         return false;
@@ -55,7 +64,7 @@ bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_
         .codeSize = code_size,
         .pCode    = code_buffer
     };
-
+    shader_module->stage = extension_to_shader_stage(filename);
     return vk->CreateShaderModule(device, &shader_module_create_info, NULL, &shader_module->handle) == VK_SUCCESS;
 }
 
@@ -65,9 +74,14 @@ void destroy_shader_module(vk_shader_module *shader_module, const vk_functions *
     }
 }
 
-bool init_shader_stage_info(VkPipelineShaderStageCreateInfo *shader_stage, const vk_functions *vk, const char *filename) {
-    shader_stage->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertShaderStageInfo->stage = extension_to_shader_stage(filename);
-        
-    return true;
+void init_shader_stage_create_info(VkPipelineShaderStageCreateInfo *shader_stage, vk_shader_module *shader_module,
+    const char *entry_point) 
+{
+    shader_stage->sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shader_stage->pNext               = NULL;
+    shader_stage->flags               = 0;
+    shader_stage->stage               = shader_module->stage;
+    shader_stage->module              = shader_module->handle;
+    shader_stage->pName               = entry_point;
+    shader_stage->pSpecializationInfo = NULL;
 }

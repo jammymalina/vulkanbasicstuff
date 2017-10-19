@@ -8,14 +8,11 @@
 #include "../vulkan_tools/vulkan_limits.h"
 
 typedef struct {
-    const char *name;
+    char name[MAX_KEY_LENGTH];
     VkShaderModule handle;
     VkShaderModuleCreateFlags flags;
+    VkShaderStageFlagBits stage;
 } vk_shader_module;
-
-typedef struct {
-    const char *name; 
-} vk_pipeline_shader_stage;
 
 void init_shader_module(vk_shader_module *shader_module);
 bool init_shader_module_from_filename(vk_shader_module *shader_module, const vk_functions *vk,
@@ -24,6 +21,7 @@ bool init_shader_modules(vk_shader_module shader_modules[MAX_SHADER_MODULE_COUNT
     uint32_t shader_module_count);
 void destroy_shader_module(vk_shader_module *shader_module, const vk_functions *vk, VkDevice device);
 
-bool init_shader_stage_info(VkPipelineShaderStageCreateInfo *shader_stage, const vk_functions *vk, const char *filename);
+void init_shader_stage_create_info(VkPipelineShaderStageCreateInfo *shader_stage, vk_shader_module *shader_module,
+    const char *entry_point);
 
 #endif // VULKAN_SHADER_H

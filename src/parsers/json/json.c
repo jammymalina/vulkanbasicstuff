@@ -482,7 +482,7 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
                 return false;
             }
             (*node)->value.type = JSON_VALUE_STRING;
-            strcpy((*node)->value.data.str, str);
+            strcpy((*node)->value.str, str);
             return true;
         case JSON_TOKEN_NUMBER:
             success = parse_number(parser, &num);
@@ -490,7 +490,7 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
                 return false;
             }
             (*node)->value.type = JSON_VALUE_NUMBER;            
-            (*node)->value.data.num = num;
+            (*node)->value.num = num;
             return true;
         case JSON_TOKEN_CURLY_OPEN:
             (*node)->value.type = JSON_VALUE_OBJECT;    
@@ -501,7 +501,7 @@ bool parse_value(json_parser *parser, json_tree_node **node, const char *key) {
         case JSON_TOKEN_TRUE:
         case JSON_TOKEN_FALSE:
             (*node)->value.type = JSON_VALUE_BOOLEAN;    
-            (*node)->value.data.b = token == JSON_TOKEN_TRUE;
+            (*node)->value.b = token == JSON_TOKEN_TRUE;
             next_token(parser->json, &parser->index);
             return true;
         case JSON_TOKEN_NULL:
@@ -560,13 +560,13 @@ void print_all_json_pointers_r(const json_tree_node *node, char str[JSON_POINTER
     printf("%s: %s", str, json_value_type_to_string(node->value.type));
     switch (node->value.type) {
         case JSON_VALUE_NUMBER:
-            printf(", %.2f", node->value.data.num);
+            printf(", %.2f", node->value.num);
             break;
         case JSON_VALUE_STRING:
-            printf(", %s", node->value.data.str);
+            printf(", %s", node->value.str);
             break;
         case JSON_VALUE_BOOLEAN:
-            printf(", %s", node->value.data.b ? "true" : "false");
+            printf(", %s", node->value.b ? "true" : "false");
             break;
         default:
             break;

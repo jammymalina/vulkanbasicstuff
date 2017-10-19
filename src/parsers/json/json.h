@@ -41,7 +41,7 @@ typedef struct json_tree_node {
             double num;
             bool b;
             char str[JSON_MAX_STRING_LENGTH];
-        } data;
+        };
     } value;
 
     char key[JSON_MAX_STRING_LENGTH];
